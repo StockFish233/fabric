@@ -10,7 +10,9 @@ import {
   Button,
   ButtonGroup,
   Input,
-  InputNumber} from 'element-ui'
+  InputNumber,
+  Select,
+  Option} from 'element-ui'
 
 Vue.config.productionTip = false
 Vue.use(fabric)
@@ -20,6 +22,8 @@ Vue.use(Button)
 Vue.use(ButtonGroup)
 Vue.use(Input)
 Vue.use(InputNumber)
+Vue.use(Select)
+Vue.use(Option)
 
 /* eslint-disable no-new */
 new Vue({
