@@ -84,7 +84,8 @@
       <el-col :span="24" style="margin: 0 auto;">
         <canvas id="canvas" :width="canvasWidth" :height="canvasHeight"></canvas>
         <br />
-        <img :src="imgSrc" id="img" style @load="init" />
+        <img :src="imgSrc" id="img" style="display:none" @load="init" />
+        <img :src="imgSrc_clip" id="img_clip" style="display:none" @load="init_clip" />
       </el-col>
     </el-row>
   </div>
@@ -98,6 +99,7 @@ export default {
       canvasWidth: 1800,
       canvasHeight: 800,
       imgSrc: "../static/test.jpg",
+      imgSrc_clip: "",
       shapes: [
         {
           value: "rect",
@@ -109,7 +111,6 @@ export default {
         }
       ],
       value: "", // 裁剪框的形状值
-      isFirst: true, // 区分初次渲染和裁剪后的渲染
       imgAngle: 0,
       curImgAngle: 0,
       rotateMode: "", // 记录旋转模式
@@ -124,6 +125,10 @@ export default {
       maskWidth: 0,
       maskHeight: 0,
       maskRadius: 0,
+      maskLeft: 0,
+      maskTop: 0,
+      newImgWidth: 0,
+      newImgHeight: 0,
       state: "" // 记录正在进行的编辑模式
     };
   },
@@ -161,30 +166,79 @@ export default {
       this.mask.set("radius", this.maskRadius);
       this.canvas.renderAll();
     },
-    value: function() {
-      this.addMask();
-      if (this.value == "circle") {
+    value: function() {   
+      if(this.value == "rect"){
+        this.image.clipPath = new fabric.Rect();
+      }else if (this.value == "circle") {
         this.image.clipPath = new fabric.Circle();
       }
+      this.addMask();
     }
   },
   methods: {
     init() {
       var img = document.getElementById("img");
-      if (this.isFirst) {
-        var self = this;
-        this.canvas = this.__canvas = new fabric.Canvas("canvas");
-        this.image = new fabric.Image(img, {
-          left: 0,
+      var self = this;
+      this.canvas = this.__canvas = new fabric.Canvas("canvas");
+      this.image = new fabric.Image(img, {
+        left: 0,
+        top: 0,
+        width: img.width,
+        height: img.height,
+        angle: this.imgAngle,
+        clipPath: new fabric.Rect({
           top: 0,
+          left: 0,
           width: img.width,
           height: img.height,
-          angle: this.imgAngle,
+          fill: "silver",
+          stroke: "silver",
+          strokeDashArray: [5, 5],
+          absolutePositioned: true,
+          lockMovementX: true,
+          lockMovementY: true,
+          hasRotatingPoint: false,
+          hasControls: true,
+          selectable: false
+        }),
+        // lockMovementX: true,
+        // lockMovementY: true,
+        // lockRotation: true,
+        // hasControls: false, // 编辑框
+        // selectable: false
+      });
+      this.imgWidth = this.image.width;
+      this.imgHeight = this.image.height;
+      this.image.crossOrigin = "anonymous";
+      this.refreshScale();
+      this.image.setCoords();
+      this.canvas.add(this.image);
+      this.image.center();
+      this.image.setCoords();
+      this.mask.setCoords();
+      this.canvas.renderAll();
+      this.imgScale = this.image.width / this.image.height;
+      this.maskLeft = this.image.left;
+      this.maskTop = this.image.top;
+      this.newImgWidth = this.image.width;
+      this.newImgHeight = this.image.height;
+      
+    },
+    init_clip() {
+      if(this.imgSrc_clip!=""){
+        this.image.setSrc(this.imgSrc_clip);
+        this.image.set({
+          left: this.maskLeft,
+          top: this.maskTop,
+          scaleX: 1,
+          scaleY: 1,
+          width: this.newImgWidth,
+          height: this.newImgHeight,
           clipPath: new fabric.Rect({
-            top: 0,
             left: 0,
-            width: img.width,
-            height: img.height,
+            top: 0,
+            width: this.canvas.width,
+            height: this.canvas.height,
             fill: "silver",
             stroke: "silver",
             strokeDashArray: [5, 5],
@@ -200,27 +254,7 @@ export default {
           // lockRotation: true,
           // hasControls: false, // 编辑框
           // selectable: false
-        });
-        this.imgWidth = this.image.width;
-        this.imgHeight = this.image.height;
-        this.image.crossOrigin = "anonymous";
-        this.refreshScale();
-        this.image.setCoords();
-        this.canvas.add(this.image);
-        this.image.center();
-        this.image.setCoords();
-        this.mask.setCoords();
-        this.canvas.renderAll();
-        this.imgScale = this.image.width / this.image.height;
-        this.isFirst = false;
-      } else {
-        this.image.setSrc(this.imgSrc);
-        this.image.set("left", 0);
-        this.image.set("top", 0);
-        this.image.set("scaleX", 1);
-        this.image.set("scaleY", 1);
-        this.image.set("width", img.width);
-        this.image.set("height", img.height);
+        })
         this.imgWidth = this.image.width;
         this.imgHeight = this.image.height;
         this.imgScale = this.image.width / this.image.height;
@@ -403,7 +437,7 @@ export default {
       if (this.value == "rect") {
         this.mask = new fabric.Rect({
           left: this.image.left,
-          top: this.image.top,
+          top: this.image.top,     
           originX: "left",
           originY: "top",
           // selectable: false,
@@ -420,13 +454,11 @@ export default {
           padding: 0,
           angle: this.image.angle
         });
-        // this.mask.width = this.image.width * this.image.scaleX;
-        // this.mask.height = this.image.height * this.image.scaleY;
-        this.mask.width = this.image.clipPath.width;
-        this.mask.height = this.image.clipPath.height;
+        this.mask.width = this.newImgWidth;
+        this.mask.height = this.newImgHeight;
         this.mask.setCoords();
         this.canvas.add(this.mask).setActiveObject(this.mask);
-        this.scaleMask();
+        // this.scaleMask();
         this.maskWidth = this.mask.getScaledWidth();
         this.maskHeight = this.mask.getScaledHeight();
       } else if (this.value == "circle") {
@@ -454,7 +486,7 @@ export default {
         this.mask.center();
         this.mask.setCoords();
         this.canvas.add(this.mask).setActiveObject(this.mask);
-        this.scaleMask();
+        // this.scaleMask();
         this.maskWidth = this.mask.getScaledWidth();
         this.maskHeight = this.mask.getScaledHeight();
         this.maskRadius = this.mask.radius;
@@ -534,7 +566,7 @@ export default {
           }
         }
       }
-      this.scaleMask();
+      // this.scaleMask();
       this.mask.setCoords();
       this.mask.center();
       this.canvas.renderAll();
@@ -544,43 +576,36 @@ export default {
     toClip() {
       this.mask.setCoords();
       this.image.setCoords();
-      var x = this.mask.left;
-        var y = this.mask.top;
-        if (y < 0) y = 0;
-        if (x < 0) x = 0;
-        var width = this.maskWidth;
-        var height = this.maskHeight;
-        var radius = this.mask.radius;
+      this.maskLeft = this.mask.left;
+      this.maskTop = this.mask.top;
+      if (this.maskTop < 0) this.maskTop = 0;
+      if (this.maskLeft < 0) this.maskLeft = 0;
+      this.newImgWidth = this.maskWidth;
+      this.newImgHeight = this.maskHeight;
+      var radius = this.mask.radius;
       if (this.value == "rect") {
-        // var x = this.mask.left;
-        // var y = this.mask.top;
-        // if (y < 0) y = 0;
-        // if (x < 0) x = 0;
-        // var width = this.maskWidth;
-        // var height = this.maskHeight;
         this.image.clipPath.set({
-          top: y,
-          left: x,
-          width: width,
-          height: height
+          top: this.maskTop,
+          left: this.maskLeft,
+          width: this.newImgWidth,
+          height: this.newImgHeight
         });
         this.canvas.remove(this.mask);
         var img = this.canvas.toDataURL({
-          left: x,
-          top: y,
-          width: width,
-          height: height
+          left: this.maskLeft,
+          top: this.maskTop,
+          width: this.newImgWidth,
+          height: this.newImgHeight
         });
-        this.imgSrc = img;
+        this.imgSrc_clip = img;
         this.canvas.renderAll();
       } else if (this.value == "circle") {
         debugger;
-        
         this.image.clipPath = new fabric.Circle({
-          top: y,
-          left: x,
-          width: width,
-          height: height,
+          top: this.maskTop,
+          left: this.maskLeft,
+          width: this.newImgWidth,
+          height: this.newImgHeight,
           radius: radius,
           fill: "silver",
           stroke: "silver",
@@ -593,21 +618,21 @@ export default {
           selectable: false
         });
         this.image.clipPath.set({
-          top: y,
-          left: x,
+          top: this.maskTop,
+          left: this.maskLeft,
           radius: radius,
-          width: width,
-          height: height,
+          width: this.newImgWidth,
+          height: this.newImgHeight
         });
         this.canvas.remove(this.mask);
         var img = this.canvas.toDataURL({
-          left: x,
-          top: y,
+          left: this.maskLeft,
+          top: this.maskTop,
           radius: radius,
-          width: width,
-          height: height,
+          width: this.newImgWidth,
+          height: this.newImgHeight
         });
-        this.imgSrc = img;
+        this.imgSrc_clip = img;
         this.canvas.renderAll();
       }
       console.log(this.imgSrc);
@@ -639,6 +664,8 @@ export default {
           } else if (this.value == "circle") {
             this.maskRadius = this.mask.radius();
           }
+          var num;
+          console.log("mask is scaling");
         }
       });
     }
@@ -646,6 +673,7 @@ export default {
   mounted() {
     // this.init();
     // this.fabricObjAddEvent();
+    this.scaleMask();
   }
 };
 </script>
