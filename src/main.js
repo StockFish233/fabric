@@ -12,7 +12,9 @@ import {
   Input,
   InputNumber,
   Select,
-  Option} from 'element-ui'
+  Option,
+  Slider,
+  Upload} from 'element-ui'
 
 Vue.config.productionTip = false
 Vue.use(fabric)
@@ -24,6 +26,8 @@ Vue.use(Input)
 Vue.use(InputNumber)
 Vue.use(Select)
 Vue.use(Option)
+Vue.use(Slider)
+Vue.use(Upload)
 
 /* eslint-disable no-new */
 new Vue({
