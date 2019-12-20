@@ -5,7 +5,7 @@
         <el-button type="primary" @click="addMask()">裁剪</el-button>
         <el-button type="primary" @click="state='resetSize'">尺寸</el-button>
         <el-button type="primary" @click="addRotateMask()">旋转</el-button>
-        <el-button type="primary" @click="startBrightness()">亮度</el-button>
+        <el-button type="primary" @click="chooseBrightness()">亮度</el-button>
         <el-button type="primary" @click="state='contrast'">对比度</el-button>
         <el-button type="primary" @click="state='saturation'">饱和度</el-button>
         <el-button type="primary" @click="state='saturation'">色温</el-button>
@@ -86,17 +86,18 @@
         <el-button @click="toResetSize()">应用</el-button>
       </el-col>
     </el-row>
-    <el-row v-else-if="state == 'brightness'" type="flex" justify="center" style="margin: 0 auto;margin-top:20px;">
+    <el-row v-else-if="state == 'brightness'" type="flex" justify="center" 
+      style="margin: 0 auto;margin-top:20px;">
       <el-col :span="1">
         <el-button @click="cancelBrightness()">取消</el-button>
       </el-col>
       <el-col :span="1" style="margin-top:8px;">亮度</el-col>
       <el-col :span="4">
-        <el-slider v-model="brightness" :min="-1" :max="1" :step="0.000001" 
+        <el-slider v-model="brightnessValue" :min="-1" :max="1" :step="0.000001" 
           style="width:300px;margin: 0 auto" @input="changeBrightness()"></el-slider>
       </el-col>
       <el-col :span="1">
-        <el-button @click="toResetBrightness()">应用</el-button>
+        <el-button @click="saveBrightness()">应用</el-button>
       </el-col>
     </el-row>
     <el-row class="canvasDiv" type="flex" justify="center" style="margin: 20px">
@@ -186,7 +187,8 @@ export default {
         "resize"
       ],
       filter: new fabric.Image.filters.Brightness(),
-      brightness: 0
+      brightness: 0, // 图片亮度
+      brightnessValue: 0, // 图片亮度修改后的值
     };
   },
   watch: {
@@ -290,12 +292,15 @@ export default {
       this.canvas.preserveObjectStacking = true; // 禁止选中图层时自定义顶部
       fabric.Object.prototype.transparentCorners = false;
       fabric.filterBackend = fabric.initFilterBackend();
+      // fabric.filterBackend = webglBackend; // 性能高，但可能会有一些浏览器不支持
+      fabric.filterBackend = canvas2dBackend;
       this.canvas.renderAll();
       this.imgScale = this.image.width / this.image.height;
       this.newImgLeft = this.image.left;
       this.newImgTop = this.image.top;
       this.newImgWidth = this.image.getScaledWidth();
       this.newImgHeight = this.image.getScaledHeight();
+      this.image.filters = this.filters;
     },
     init_clip() {
       if (this.imgSrc_clip != "") {
@@ -431,7 +436,6 @@ export default {
         this.image.scaleToWidth(this.imgScaledWidth);
         this.image.scaleToHeight(this.imgScaledHeight);
       }
-      debugger
       if (this.curImgAngle % 90 == 0 && this.curImgAngle != 180 &&this.curImgAngle != 0 &&this.curImgAngle != 360) { // 图片垂直向
         this.imgHeight = this.image.width;
         this.imgWidth = this.image.height;
@@ -444,10 +448,7 @@ export default {
           console.log("图片适应画布的高" + this.image.getScaledHeight());
         }
         this.mask.set('width', this.image.getScaledHeight());
-        this.mask.set('height', this.image.getScaledWidth());
-        // this.newImgWidth = this.image.getScaledHeight();
-        // this.newImgHeight = this.image.getScaledWidth();
-        
+        this.mask.set('height', this.image.getScaledWidth());      
       } else {
         this.imgHeight = this.image.height;
         this.imgWidth = this.image.width;
@@ -460,10 +461,7 @@ export default {
         this.refreshScale();
         this.mask.set('width', this.image.getScaledWidth());
         this.mask.set('height', this.image.getScaledHeight());
-        // this.newImgWidth = this.image.getScaledWidth();
-        // this.newImgHeight = this.image.getScaledHeight();
       }
-
       this.image.setCoords();
       this.image.center();
       this.mask.center();
@@ -507,8 +505,10 @@ export default {
       this.canvas.renderAll();
     },
     toRotate() { 
-      this.newImgLeft = this.image.left;
-      this.newImgTop = this.image.top; 
+      this.newImgLeft = this.mask.left;
+      this.newImgTop = this.mask.top;
+      this.newImgWidth = this.mask.width;
+      this.newImgHeight = this.mask.height; 
       this.image.clipPath = new fabric.Rect({
         left: this.newImgLeft,
         top: this.newImgTop,
@@ -530,11 +530,11 @@ export default {
       this.scaleImage("off");
     },
 
-    // 改变尺寸相关方法
+    // 改变尺寸（缩放）相关方法
     refreshSize() {
       this.state = "";
     },
-    toResetSize() {
+    toResetSize() {    
       if (this.lockScale) {
         if (this.imgScaledHeight <= this.canvas.height) {
           if (this.imgScaledWidth > this.imgScaledHeight) {
@@ -696,7 +696,7 @@ export default {
           }
         }
       } else if (command == "16:9") {
-        debugger;
+        // debugger;
         if (this.imgScale > 16 / 9) {
           if (this.imgScale > 1) {
             this.mask.set("height", min / this.mask.scaleY);
@@ -735,7 +735,6 @@ export default {
       this.newImgScaleX = 1;
       this.newImgScaleY = 1;
       var radius = this.mask.radius;
-      debugger;
       if (this.value == "rect") {
         this.image.clipPath.set({
           top: this.newImgTop,
@@ -752,7 +751,6 @@ export default {
           height: this.newImgHeight
         });
       } else if (this.value == "circle") {
-        debugger;
         this.image.clipPath = new fabric.Circle({
           top: this.newImgTop,
           left: this.newImgLeft,
@@ -885,39 +883,39 @@ export default {
 
     // 图像滤镜相关方法
     applyFilter(index, filter) {
-      var obj = this.canvas.getActiveObject();
-      obj.filters[index] = filter;
-      obj.applyFilters();
-      canvas.renderAll();
-    },
-    getFilter(index) {
-      var obj = this.canvas.getActiveObject();
-      return obj.filters[index];
-    },
-    applyFilterValue(index, prop, value) {
-      var obj = this.canvas.getActiveObject();
-      if (obj.filters[index]) {
-        obj.filters[index][prop] = value;
-        // var timeStart = +new Date();
-        obj.applyFilters();
-        canvas.renderAll();
-      }
-    },
-    startBrightness() {
-      this.state = "brightness";
-      this.filter = new fabric.Image.filters.Brightness({
-        brightness: this.brightness
-      });
-      this.image.filters.push(filter);
+      this.image.filters[index] = filter;
       this.image.applyFilters();
       this.canvas.renderAll();
     },
-    // 改变亮度
-    changeBrightness() {
-      console.log(this.brightness);
-      this.image.filters[0][brightness] = this.brightness;
+    getFilter(index) {
+      return this.image.filters[index];
     },
-
+    applyFilterValue(index, prop, value) {
+      if (this.image.filters[index]) {
+        this.image.filters[index][prop] = value;
+        // var timeStart = +new Date();
+        this.image.applyFilters();
+        this.canvas.renderAll();
+      }
+    },
+    // 改变亮度
+    chooseBrightness() {
+      this.state = "brightness";
+      this.applyFilter(5, new fabric.Image.filters.Brightness({
+        brightness: parseFloat(this.brightness)}));
+      this.brightnessValue = this.Brightness;
+    },   
+    changeBrightness() {
+      this.applyFilterValue(5, 'brightness', parseFloat(this.brightnessValue));
+    },
+    cancelBrightness() {
+      this.state = "";
+      this.applyFilterValue(5, 'brightness', parseFloat(this.brightness));
+    },
+    saveBrightness() {
+      this.state = "";
+      this.brightness = this.brightnessValue;
+    },
     // 保存图片
     save(){
       this.imgSrc_clip = this.canvas.toDataURL({
