@@ -6,12 +6,12 @@
         <el-button type="primary" @click="state='resetSize'">尺寸</el-button>
         <el-button type="primary" @click="addRotateMask()">旋转</el-button>
         <el-button type="primary" @click="chooseBrightness()">亮度</el-button>
-        <el-button type="primary" @click="state='contrast'">对比度</el-button>
-        <el-button type="primary" @click="state='saturation'">饱和度</el-button>
-        <el-button type="primary" @click="state='saturation'">色温</el-button>
-        <el-button type="primary" @click="state='sharpen'">锐度</el-button>
-        <el-button type="primary" @click="state='gamma'">伽马</el-button>
-        <el-button type="primary" @click="state='blur'">模糊</el-button>
+        <el-button type="primary" @click="chooseContrast()">对比度</el-button>
+        <el-button type="primary" @click="chooseSaturation()">饱和度</el-button>
+        <el-button type="primary" @click="chooseBlendColor()">混合颜色</el-button>
+        <el-button type="primary" @click="chooseSharpen()">锐化</el-button>
+        <el-button type="primary" @click="chooseGamma()">伽马</el-button>
+        <el-button type="primary" @click="chooseBlur()">模糊</el-button>
       </el-button-group>
       <el-button type="primary" @click="save()">保存</el-button>
     </el-row>
@@ -100,12 +100,114 @@
         <el-button @click="saveBrightness()">应用</el-button>
       </el-col>
     </el-row>
-    <el-row class="canvasDiv" type="flex" justify="center" style="margin: 20px">
-      <el-col :span="24" >
+    <el-row v-else-if="state == 'contrast'" type="flex" justify="center" 
+      style="margin: 0 auto;margin-top:20px;">
+      <el-col :span="1">
+        <el-button @click="cancelContrast()">取消</el-button>
+      </el-col>
+      <el-col :span="1" style="margin-top:8px;">对比度</el-col>
+      <el-col :span="4">
+        <el-slider v-model="contrastValue" :min="-1" :max="1" :step="0.000001" 
+          style="width:300px;margin: 0 auto" @input="changeContrast()"></el-slider>
+      </el-col>
+      <el-col :span="1">
+        <el-button @click="saveContrast()">应用</el-button>
+      </el-col>
+    </el-row>
+    <el-row v-else-if="state == 'saturation'" type="flex" justify="center" 
+      style="margin: 0 auto;margin-top:20px;">
+      <el-col :span="1">
+        <el-button @click="cancelSaturation()">取消</el-button>
+      </el-col>
+      <el-col :span="1" style="margin-top:8px;">饱和度</el-col>
+      <el-col :span="4">
+        <el-slider v-model="saturationValue" :min="-1" :max="1" :step="0.000001" 
+          style="width:300px;margin: 0 auto" @input="changeSaturation()"></el-slider>
+      </el-col>
+      <el-col :span="1">
+        <el-button @click="saveSaturation()">应用</el-button>
+      </el-col>
+    </el-row>
+    <el-row v-else-if="state == 'blendColor'" type="flex" justify="center" 
+      style="margin: 0 auto;margin-top:20px;">
+      <el-col :span="1">
+        <el-button @click="cancelBlendColor()">取消</el-button>
+      </el-col>
+      <el-col :span="1" style="margin-top:8px;">模式</el-col>
+      <el-col :span="2">
+        <el-select v-model="blendModeValue" @change="changeBlend('mode')">
+          <el-option v-for="item in blendModeList" :key="item.value"
+            :label="item.label" :value="item.value">
+          </el-option>
+        </el-select>
+      </el-col>
+      <el-col :span="1" style="margin-top:8px;">颜色</el-col>
+      <el-col :span="1">
+        <el-color-picker v-model="blendColorValue" @change="changeBlend('color')"></el-color-picker>
+      </el-col>
+      <el-col :span="4">
+        <el-slider v-model="blendAlphaValue" :min="0" :max="1" :step="0.01" 
+          style="width:300px;margin: 0 auto" @input="changeBlend('alpha')"></el-slider>
+      </el-col>
+      <el-col :span="1">
+        <el-button @click="saveBlendColor()">应用</el-button>
+      </el-col>
+    </el-row>
+    <el-row v-else-if="state == 'blur'" type="flex" justify="center" 
+      style="margin: 0 auto;margin-top:20px;">
+      <el-col :span="1">
+        <el-button @click="cancelBlur()">取消</el-button>
+      </el-col>
+      <el-col :span="1" style="margin-top:8px;">模糊度</el-col>
+      <el-col :span="4">
+        <el-slider v-model="blurValue" :min="0" :max="1" :step="0.0001" 
+          style="width:300px;margin: 0 auto" @input="changeBlur()"></el-slider>
+      </el-col>
+      <el-col :span="1">
+        <el-button @click="saveBlur()">应用</el-button>
+      </el-col>
+    </el-row>
+    <el-row v-else-if="state == 'gamma'" type="flex" justify="center" 
+      style="margin: 0 auto;margin-top:20px;">
+      <el-col :span="1">
+        <el-button @click="cancelGamma()">取消</el-button>
+      </el-col>
+      <el-col :span="1" style="margin-top:8px;">red</el-col>
+      <el-col :span="4">
+        <el-slider v-model="gammaRedValue" :min="0.01" :max="2.2" :step="0.001" 
+          style="width:300px;margin: 0 auto" @input="changeGamma('red')"></el-slider>
+      </el-col>
+      <el-col :span="1" style="margin-top:8px;">green</el-col>
+      <el-col :span="4">
+        <el-slider v-model="gammaGreenValue" :min="0.01" :max="2.2" :step="0.001" 
+          style="width:300px;margin: 0 auto" @input="changeGamma('green')"></el-slider>
+      </el-col>
+      <el-col :span="1" style="margin-top:8px;">blue</el-col>
+      <el-col :span="4">
+        <el-slider v-model="gammaBlueValue" :min="0.01" :max="2.2" :step="0.001" 
+          style="width:300px;margin: 0 auto" @input="changeGamma('blue')"></el-slider>
+      </el-col>
+      <el-col :span="1">
+        <el-button @click="saveGamma()">应用</el-button>
+      </el-col>
+    </el-row>
+    <el-row class="canvasDiv" type="flex" justify="center" style="margin: 0 auto;margin-top: 20px;">
+      <el-col :span="20" >
         <canvas id="canvas" :width="canvasWidth" :height="canvasHeight"></canvas>
         <br />
         <img :src="imgSrc" id="img" style="display:none" @load="init" />
         <img :src="imgSrc_clip" id="img_clip" @load="init_clip"/>
+      </el-col>
+      <el-col :span="4">
+        <el-upload class="upload-demo"
+          action="https://jsonplaceholder.typicode.com/posts/"
+          :on-preview="handlePreview"
+          :on-remove="handleRemove"
+          :file-list="imageList"
+          list-type="picture">
+          <el-button size="small" type="primary">上传图片</el-button>
+          <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
+        </el-upload>
       </el-col>
     </el-row>
   </div>
@@ -115,7 +217,7 @@ export default {
   name: "App",
   data() {
     return {
-      canvasWidth: 1800,
+      canvasWidth: 1500,
       canvasHeight: 800,
       imgSrc: "../static/test.jpg",
       imgSrc_clip: "",
@@ -131,6 +233,7 @@ export default {
       ],
       imageList:[
         {name: 'timg.jpg', url: '../static/timg.jpg'},
+        {name: 'shuiyin.jpg', url: '../static/shuiyin.jpg'},
       ],
       value: "rect", // 裁剪框的形状值,默认为矩形
       imgAngle: 0,
@@ -189,6 +292,56 @@ export default {
       filter: new fabric.Image.filters.Brightness(),
       brightness: 0, // 图片亮度
       brightnessValue: 0, // 图片亮度修改后的值
+      contrast: 0,
+      contrastValue: 0,
+      saturation: 0,
+      saturationValue: 0,
+      blendColor: '#409EFF',
+      blendMode: "add",
+      blendModeList: [{
+          value: "add",
+          label: '加'
+        }, {
+          value: "multiply",
+          label: '乘'
+        }, {
+          value: "subtract",
+          label: '减去'
+        }, {
+          value: "diff",
+          label: '差异'
+        }, {
+          value: "screen",
+          label: '屏幕'
+        }, {
+          value: "lighten",
+          label: '减轻'
+        }, {
+          value: "darken",
+          label: '变暗'
+        }, {
+          value: "overlay",
+          label: '覆盖'
+        }, {
+          value: "exclusion",
+          label: '排除'
+        }, {
+          value: "tint",
+          label: '着色'
+        }
+      ],
+      blendAlpha: 0,
+      blendColorValue: '#409EFF',
+      blendModeValue: "add",
+      blendAlphaValue: 0,
+      blur: 0,
+      blurValue: 0,
+      gammaRed: 1,
+      gammaGreen: 1,
+      gammaBlue: 1,
+      gammaRedValue: 1,
+      gammaGreenValue: 1,
+      gammaBlueValue: 1,
     };
   },
   watch: {
@@ -381,8 +534,8 @@ export default {
         hasControls: false, // 编辑框
         // selectable: false
       });
-      this.mask.width = this.newImgWidth;
-      this.mask.height = this.newImgHeight;
+      this.mask.width = this.image.getScaledWidth();
+      this.mask.height = this.image.getScaledHeight();
       this.mask.setCoords();
       this.mask.center();
       this.canvas.add(this.mask)
@@ -592,8 +745,10 @@ export default {
           padding: 0,
           angle: this.image.angle
         });
-        this.mask.width = this.newImgWidth;
-        this.mask.height = this.newImgHeight;
+        // this.mask.width = this.newImgWidth;
+        // this.mask.height = this.newImgHeight;
+        this.mask.width = this.image.getScaledWidth();
+        this.mask.height = this.image.getScaledHeight();
         this.mask.setCoords();
         this.canvas.add(this.mask);
         this.canvas.setActiveObject(this.image);
@@ -898,12 +1053,12 @@ export default {
         this.canvas.renderAll();
       }
     },
-    // 改变亮度
+    // 亮度
     chooseBrightness() {
       this.state = "brightness";
       this.applyFilter(5, new fabric.Image.filters.Brightness({
         brightness: parseFloat(this.brightness)}));
-      this.brightnessValue = this.Brightness;
+      this.brightnessValue = this.brightness;
     },   
     changeBrightness() {
       this.applyFilterValue(5, 'brightness', parseFloat(this.brightnessValue));
@@ -916,15 +1071,152 @@ export default {
       this.state = "";
       this.brightness = this.brightnessValue;
     },
+    // 对比度
+    chooseContrast() {
+      this.state = "contrast";
+      this.applyFilter(6, new fabric.Image.filters.Contrast({
+        contrast: parseFloat(this.contrast)}));
+      this.contrastValue = this.contrast;
+    },   
+    changeContrast() {
+      this.applyFilterValue(6, 'contrast', parseFloat(this.contrastValue));
+    },
+    cancelContrast() {
+      this.state = "";
+      this.applyFilterValue(6, 'contrast', parseFloat(this.contrast));
+    },
+    saveContrast() {
+      this.state = "";
+      this.contrast = this.contrastValue;
+    },
+    // 饱和度
+    chooseSaturation() {
+      this.state = "saturation";
+      this.applyFilter(7, new fabric.Image.filters.Saturation({
+        saturation: parseFloat(this.saturation)}));
+      this.saturationValue = this.saturation;
+    },   
+    changeSaturation() {
+      this.applyFilterValue(7, 'saturation', parseFloat(this.saturationValue));
+    },
+    cancelSaturation() {
+      this.state = "";
+      this.applyFilterValue(7, 'saturation', parseFloat(this.saturation));
+    },
+    saveSaturation() {
+      this.state = "";
+      this.saturation = this.saturationValue;
+    },
+    // 混合颜色
+    chooseBlendColor(){
+      this.state = "blendColor";
+      this.applyFilter(16, new fabric.Image.filters.BlendColor({
+        color: this.blendColor,
+        mode: this.blendMode,
+        alpha: this.blendAlpha
+      }));
+      this.blendColorValue = this.blendColor;
+      this.blendModeValue = this.blendMode;
+      this.blendAlphaValue = this.blendAlpha;
+    },   
+    changeBlend(prop) {
+      if(prop == "color")
+        this.applyFilterValue(16, 'color', this.blendColorValue);
+      else if(prop == "mode")
+        this.applyFilterValue(16, 'mode', this.blendModeValue);
+      else if(prop == "alpha")
+        this.applyFilterValue(16, 'alpha', parseFloat(this.blendAlphaValue));
+    },
+    cancelBlendColor() {
+      this.state = "";
+      this.applyFilterValue(16, 'color', this.blendColor);
+      this.applyFilterValue(16, 'mode', this.blendMode);
+      this.applyFilterValue(16, 'alpha', this.blendAlpha);
+    },
+    saveBlendColor() {
+      this.state = "";
+      this.blendColor = this.blendColorValue;
+      this.blendMode = this.blendModeValue;
+      this.blendAlpha = this.blendAlphaValue;
+    },
+    // 锐化
+    chooseSharpen(){
+      // this.state = "sharpen";
+      this.applyFilter(12, new fabric.Image.filters.Convolute({
+        matrix: [
+           0, -1,  0,
+          -1,  5, -1,
+           0, -1,  0 
+        ]
+      }));
+    },
+    // 模糊
+    chooseBlur() {
+      this.state = "blur";
+      this.applyFilter(11, new fabric.Image.filters.Blur({
+        value: parseFloat(this.blur)}));
+      this.blurValue = this.blur;
+    },   
+    changeBlur() {
+      this.applyFilterValue(11, 'blur', parseFloat(this.blurValue));
+    },
+    cancelBlur() {
+      this.state = "";
+      this.applyFilterValue(11, 'blur', parseFloat(this.blur));
+    },
+    saveBlur() {
+      this.state = "";
+      this.blur = this.blurValue;
+    },
+    // 伽马
+    chooseGamma() {
+      this.state = "gamma";
+      this.applyFilter(17, new fabric.Image.filters.Gamma({
+        gamma: [this.gammaRed, this.gammaGreen, this.gammaBlue]
+      }));
+      this.gammaRedValue = this.gammaRed;
+      this.gammaGreenValue = this.gammaGreen;
+      this.gammaBlueValue = this.gammaBlue;
+    },   
+    changeGamma(color) {
+      var current = this.getFilter(17).gamma;
+      if(color == 'red'){
+        current[0] = parseFloat(this.gammaRedValue);
+      }else if(color == 'green'){
+        current[1] = parseFloat(this.gammaGreenValue);
+      }else if(color == 'blue'){
+        current[2] = parseFloat(this.gammaBlueValue);
+      }
+      this.applyFilterValue(17, 'gamma', current);
+    },
+    cancelGamma() {
+      this.state = "";
+      this.applyFilterValue(17, 'gamma', 
+        [parseFloat(this.gammaRed),parseFloat(this.gammaGreen),parseFloat(this.gammaBlue)]);
+    },
+    saveGamma() {
+      this.state = "";
+      this.gammaRed = this.gammaRedValue;
+      this.gammaGreen = this.gammaGreenValue;
+      this.gammaBlue = this.gammaBlueValue;
+    },
     // 保存图片
     save(){
-      this.imgSrc_clip = this.canvas.toDataURL({
+      debugger
+      this.imgSrc_clip = this.image.toDataURL({
         format: "png",
-        left: this.newImgLeft,
-        top: this.newImgTop,
-        width: this.newImgWidth,
-        height: this.newImgHeight
+        // left: this.newImgLeft,
+        // top: this.newImgTop,
+        // multiplier: this.image.scale,
+        // width: this.image.width,
+        // height: this.image.height,
       });
+    },
+    handleRemove(image, imageList) {
+      console.log(image, imageList);
+    },
+    handlePreview(image) {
+      console.log(image);
     }
   },
   mounted() {}

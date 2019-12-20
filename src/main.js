@@ -14,7 +14,8 @@ import {
   Select,
   Option,
   Slider,
-  Upload} from 'element-ui'
+  Upload,
+  ColorPicker} from 'element-ui'
 
 Vue.config.productionTip = false
 Vue.use(fabric)
@@ -28,6 +29,7 @@ Vue.use(Select)
 Vue.use(Option)
 Vue.use(Slider)
 Vue.use(Upload)
+Vue.use(ColorPicker)
 
 /* eslint-disable no-new */
 new Vue({
