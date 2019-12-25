@@ -259,9 +259,8 @@
     <el-row class="canvasDiv" id="canvasDiv" style="margin: 0 auto;margin-top: 20px;">
       <canvas id="canvas" :width="canvasWidth" :height="canvasHeight"></canvas>
       <br />
-      <img :src="btnSrc" id="delBtn" style="display:none" />
-      <img :src="imgSrc" id="img" style="display:none" @load="init" />
-      <img :src="imgSrc_clip" id="img_clip" style="display:none" @load="init_clip" />
+      <img :src="imgSrc" id="img" style="" @load="init" />
+      <img :src="imgSrc_clip" id="img_clip" style="" @load="init_clip" />
     </el-row>
     </el-col>
     <el-col :span="4" style="margin-top: 15px">
@@ -490,17 +489,17 @@ export default {
       this.image.setCoords();
       this.mask.setCoords();
       this.canvas.preserveObjectStacking = true; // 禁止选中图层时自定义顶部
-      fabric.filterBackend = fabric.initFilterBackend();
+      
       var max;
-      debugger
       if(this.image.width > this.image.height){
         max = this.image.width;
       }else{
         max = this.image.height;
       }
       if(max > fabric.textureSize){
-        fabric.textureSize = max;
+        fabric.textureSize = max * 2;
       }
+      fabric.filterBackend = fabric.initFilterBackend();
       this.canvas.renderAll();
       this.imgScale = this.image.width / this.image.height;
       this.newImgLeft = this.image.left;
@@ -509,9 +508,11 @@ export default {
       this.newImgHeight = this.image.getScaledHeight();
       this.canvas.hoverCursor =
         'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAARCAMAAADnhAzLAAABKVBMVEUAAAAUFRfDw8TIyMggICEdHh8UFRfT1NVqamtycnOFhoYzNDVPUFBWVlcjJCYmJycsLC0eHyAuLy8oKCknKCknKCkUFRclJiYoKCgiIyTOzs/a2tqoqKjIycnMzMzd3d2urq85OTsvMDKxsbLV1dZCQkS4uLlQUFA7PD6JiYnKystXV1iJiYp3d3ifn6C4uLgfICK/v78kJSezs7Ofn59XV1hyc3OamppjY2MhISJRUVFGRkYjJCQyMzRHR0clJicUFRdHR0gXGBolJiccHR4tLS0lJicVFhgoKCktLS0cHR4XGBr////5+fn19fXt7e3s7Ozq6uri4uL7+/vv7+/o6Ojn5+fc3Nzy8vLw8PDd3t7Z2dnV1dXR0dLOzs7f39/W1ta/v7+vr6+SVJ4mAAAATHRSTlMA6d3b0os79+no4+PWz827sK2om5R1bVczKPj28/Dv7u7u7u3s7Ovr6Obl5ePj4uHg3tva2dnY1NHKxL+9ubi4tK2joJqHfnxiRyMUikpN3AAAANxJREFUGNNNy+V2wkAYhOFpSPCixeru7u7eb7NJGsHt/i+CZGE5PD/fMwOplMlVMKEM3NpXH493P7IUrl8wTaH0kjIjU56ffftJ5aG8TJ/rzkOSdlVDeSs8DYflc7pMMiOhK+l4/R7CBS3GyNyiE3VevwG0rIacScJCtBHJ4jfKd961OVH+W307XgIya2xz7ygoTLfNdgrAX2qZmCcKd6zDV/gqx7PipXPX8g6+EAgnIsGo5lhecyOMYds2/JHh1pu9U4wU94lVTavRihUhrVRZze1026sYe54aATAA+Pwr8I4RqnUAAAAASUVORK5CYII=") 8 8, auto';
+      console.log("初始化图片");
     },
     init_clip() {
       if (this.imgSrc_clip != "") {
+        debugger
         this.image.setSrc(this.imgSrc_clip);
         this.image.set({
           left: this.newImgLeft,
@@ -554,6 +555,7 @@ export default {
         this.image.clipPath.setCoords();
         this.imgScaledWidth = this.image.getScaledWidth();
         this.imgScaledHeight = this.image.getScaledHeight();
+        console.log("重载图片");
       }
     },
     refreshScale() {
@@ -1103,17 +1105,22 @@ export default {
     applyFilter(index, filter) {
       this.image.filters[index] = filter;
       this.image.applyFilters();
+      console.log("0:" + fabric.textureSize);
       this.canvas.renderAll();
+      console.log("1:" + fabric.textureSize);
     },
     getFilter(index) {
       return this.image.filters[index];
     },
     applyFilterValue(index, prop, value) {
       if (this.image.filters[index]) {
+        debugger
+        console.log("2:"+ fabric.textureSize);
         this.image.filters[index][prop] = value;
         // var timeStart = +new Date();
-        this.image.applyFilters();
+        this.image.applyFilters();   
         this.canvas.renderAll();
+        console.log("3:" + fabric.textureSize);
       }
     },
     // 亮度
@@ -1128,7 +1135,10 @@ export default {
       this.brightnessValue = this.brightness;
     },
     changeBrightness() {
+      debugger
+      console.log("4:" + fabric.textureSize);
       this.applyFilterValue(5, "brightness", parseFloat(this.brightnessValue));
+      console.log("5:" + fabric.textureSize);
     },
     cancelBrightness() {
       this.state = "";
@@ -1296,15 +1306,10 @@ export default {
         width: this.image.width,
         height: this.image.height
       });
-      // this.imgSrc_clip = this.image.scale(1).toDataURL({
-      //   format: "png",
-      //   width: this.image.width,
-      //   height: this.image.height,
-      // });
       for(var i = 0;i < this.watermarkGroup.length;i++){
         this.watermarkGroup[i].btn.set("visible", false);
       }
-      this.imgSrc_clip = this.canvas.toDataURL({
+      var newImg = this.canvas.toDataURL({
         format: "png",
         multiplier: this.image.width / this.image.getScaledWidth(),
         top: this.image.top,
@@ -1312,9 +1317,25 @@ export default {
         width: this.image.getScaledWidth(),
         height: this.image.getScaledHeight()
       });
-      this.canvas.clear();
+      // this.canvas.clear();
+      this.imgSrc_clip = newImg
+      for(var i = 0;i < this.watermarkGroup.length;i++){
+        this.canvas.remove(this.watermarkGroup[i].watermark);
+      }
+      this.watermarkGroup.splice(0, this.watermarkGroup.length);
+      this.newImgLeft = this.image.left;
+      this.newImgTop = this.image.top;
+      // if (this.newImgTop < 0) this.newImgTop = 0;
+      // if (this.newImgLeft < 0) this.newImgLeft = 0;
+      this.newImgWidth = this.image.width;
+      this.newImgHeight = this.image.height;
+      this.newImgScaleX = this.image.scaleX;
+      this.newImgScaleY = this.image.scaleY;
+      this.brightness = this.contrast = this.saturation = this.blendAlpha = this.blur = 0;
+      this.gammaRed = this.gammaGreen = this.gammaBlue = 1,
+      console.log("保存图片");
       this.canvas.renderAll();
-      console.log(JSON.stringify(this.canvas));
+      console.log(JSON.stringify(this.image));
     },
     // 上传图片
     handleRemove(image, imageList) {
@@ -1344,8 +1365,8 @@ export default {
         this.watermarkGroup[i].btn.set("visible", false);
       }
       btn = new fabric.Image(delBtn, {
-        left: watermark.left + watermark.width - 20,
-        top: watermark.top,
+        left: watermark.left + watermark.width - 30,
+        top: watermark.top + 10,
         width: 20,
         height: 20,
         visible: true,
@@ -1358,30 +1379,44 @@ export default {
       this.canvas.add(watermark, btn);
       this.canvas.renderAll();
       this.watermarkGroup.push({watermark: watermark, btn: btn});
-      this.watermarkListener(watermark,btn);
       this.clickBtn(watermark,btn);
+      this.watermarkListener(watermark,btn);
     },
     // 监听水印的鼠标事件
     watermarkListener(watermark,btn) {
       watermark.on({
         scaling: e=>{
-          btn.set("top", watermark.top);
-          btn.set("left", watermark.left + watermark.getScaledWidth() - 20);
+          btn.set("top", watermark.top + 10);
+          btn.set("left", watermark.left + watermark.getScaledWidth() - 30);
           btn.setCoords();
           this.canvas.renderAll();
         },
-        mousedown: e => {
-          for(var i = 0;i < this.watermarkGroup.length;i++){
-            this.watermarkGroup[i].btn.set("visible", false);
-          }
+        mousedown: e => {   
+          if(!(watermark.left + watermark.getScaledWidth() - 30 < e.pointer.x && e.pointer.x < watermark.left + watermark.getScaledWidth() - 10 &&
+            watermark.top + 10 < e.pointer.y && e.pointer.y < watermark.top + 30)){
+            for(var i = 0;i < this.watermarkGroup.length;i++){
+              this.watermarkGroup[i].btn.set("visible", false);
+            }
+          } else{
+            for(var i = 0;i < this.watermarkGroup.length;i++){
+              if(this.watermarkGroup[i].watermark == watermark){
+                this.watermarkGroup.splice(i,1);
+                break;
+              }
+            }
+            this.canvas.remove(watermark,btn);
+          }    
           this.canvas.renderAll();
         },
         mouseup: e => {
-          btn.set("top", watermark.top);
-          btn.set("left", watermark.left + watermark.getScaledWidth() - 20);
-          btn.set("visible", true);
-          btn.setCoords();
-          this.canvas.renderAll();
+          if(!(watermark.left + watermark.getScaledWidth() - 30 < e.pointer.x && e.pointer.x < watermark.left + watermark.getScaledWidth() - 10 &&
+            watermark.top + 10 < e.pointer.y && e.pointer.y < watermark.top + 30)){
+            btn.set("top", watermark.top + 10);
+            btn.set("left", watermark.left + watermark.getScaledWidth() - 30);
+            btn.set("visible", true);
+            btn.setCoords();
+            this.canvas.renderAll();
+          }
         },
         mouseout: e => {
           btn.set("visible", false);
@@ -1391,7 +1426,14 @@ export default {
     clickBtn(watermark,btn){
       btn.on({
         mousedown: e => {
+          for(var i = 0;i < this.watermarkGroup.length;i++){
+            if(this.watermarkGroup[i].watermark == watermark){
+              this.watermarkGroup.splice(i,1);
+              break;
+            }
+          }
           this.canvas.remove(watermark,btn);
+          console.log("delete");
         }
       })
     },
