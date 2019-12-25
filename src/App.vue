@@ -1,5 +1,7 @@
 <template>
   <div id="app">
+  <el-row type="flex" justify="center">
+    <el-col :span="20">
     <el-row v-if="state == ''">
       <el-button-group>
         <el-button type="primary" @click="addMask()">裁剪</el-button>
@@ -17,7 +19,7 @@
     </el-row>
     <el-row v-else-if="state == 'clip'">
       请选择裁剪框的形状&nbsp;&nbsp;
-      <el-select v-model="value" placeholder="请选择裁剪框的形状">
+      <el-select v-model="value" placeholder="请选择裁剪框的形状" style="width: 100px;">
         <el-option v-for="item in shapes" :key="item.value" :label="item.label" :value="item.value"></el-option>
       </el-select>
       <el-row v-if="value == 'rect'">
@@ -30,9 +32,9 @@
           <el-button @click="toClip()">应用</el-button>
         </el-button-group>&nbsp;&nbsp;
         框的宽度&nbsp;
-        <el-input-number v-model="maskWidth" controls-position="right" :min="1" :max="imgWidth"></el-input-number>&nbsp;
+        <el-input-number class="inputStyle" v-model="maskWidth" controls-position="right" :min="1" :max="imgWidth"></el-input-number>&nbsp;
         框的高度&nbsp;
-        <el-input-number v-model="maskHeight" controls-position="right" :min="1" :max="imgWidth"></el-input-number>
+        <el-input-number class="inputStyle" v-model="maskHeight" controls-position="right" :min="1" :max="imgWidth"></el-input-number>
       </el-row>
       <el-row v-else-if="value == 'circle'">
         <el-button @click="removeMask()">取消</el-button>&nbsp;&nbsp;
@@ -46,6 +48,36 @@
         <el-button @click="toClip()">应用</el-button>
       </el-row>
     </el-row>
+    <el-row v-else-if="state == 'resetSize'"
+      type="flex"
+      justify="center"
+      style="margin:0 auto;margin-top:20px;">
+      <el-col :span="1">
+        <el-button @click="refreshSize()">取消</el-button>
+      </el-col>
+      <el-col :span="4">
+        <el-input v-model="imgScaledWidth" class="inputStyle" >
+          <template slot="prepend">宽</template>
+        </el-input>
+      </el-col>
+      <el-col :span="1">
+        <el-button
+          icon="el-icon-lock"
+          type="primary"
+          v-if="lockScale==true"
+          @click="lockScale=false"
+        ></el-button>
+        <el-button icon="el-icon-unlock" type="primary" v-else @click="lockScale=true"></el-button>
+      </el-col>
+      <el-col :span="4">
+        <el-input v-model="imgScaledHeight" class="inputStyle" >
+          <template slot="prepend">高</template>
+        </el-input>
+      </el-col>
+      <el-col :span="1">
+        <el-button @click="toResetSize()">应用</el-button>
+      </el-col>
+    </el-row>
     <el-row v-else-if="state == 'rotate'">
       <el-button-group>
         <el-button @click="restoreAngle()">取消</el-button>
@@ -56,41 +88,15 @@
         <el-button @click="toRotate()">应用</el-button>
       </el-button-group>
     </el-row>
-    <el-row v-else-if="state == 'resetSize'"
-      type="flex" justify="center" style="margin:0 auto;margin-top:20px;">
-      <el-col :span="2">
-        <el-button @click="refreshSize()">取消</el-button>
-      </el-col>
-      <el-col :span="6">
-        <el-input v-model="imgScaledWidth">
-          <template slot="prepend">宽</template>
-        </el-input>
-      </el-col>
-      <el-col :span="2">
-        <el-button
-          icon="el-icon-lock"
-          type="primary"
-          v-if="lockScale==true"
-          @click="lockScale=false"
-        ></el-button>
-        <el-button icon="el-icon-unlock" type="primary" v-else @click="lockScale=true"></el-button>
-      </el-col>
-      <el-col :span="6">
-        <el-input v-model="imgScaledHeight">
-          <template slot="prepend">高</template>
-        </el-input>
-      </el-col>
-      <el-col :span="2">
-        <el-button @click="toResetSize()">应用</el-button>
-      </el-col>
-    </el-row>
     <el-row v-else-if="state == 'brightness'"
-      type="flex" justify="center" style="margin: 0 auto;margin-top:20px;">
+      type="flex"
+      justify="center"
+      style="margin: 0 auto;margin-top:20px;">
       <el-col :span="1">
         <el-button @click="cancelBrightness()">取消</el-button>
       </el-col>
       <el-col :span="1" style="margin-top:8px;">亮度</el-col>
-      <el-col :span="4">
+      <el-col :span="5">
         <el-slider
           v-model="brightnessValue"
           :min="-1"
@@ -105,12 +111,14 @@
       </el-col>
     </el-row>
     <el-row v-else-if="state == 'contrast'"
-      type="flex" justify="center" style="margin: 0 auto;margin-top:20px;">
+      type="flex"
+      justify="center"
+      style="margin: 0 auto;margin-top:20px;">
       <el-col :span="1">
         <el-button @click="cancelContrast()">取消</el-button>
       </el-col>
       <el-col :span="1" style="margin-top:8px;">对比度</el-col>
-      <el-col :span="4">
+      <el-col :span="5">
         <el-slider
           v-model="contrastValue"
           :min="-1"
@@ -125,12 +133,14 @@
       </el-col>
     </el-row>
     <el-row v-else-if="state == 'saturation'"
-      type="flex" justify="center" style="margin: 0 auto;margin-top:20px;">
+      type="flex"
+      justify="center"
+      style="margin: 0 auto;margin-top:20px;">
       <el-col :span="1">
         <el-button @click="cancelSaturation()">取消</el-button>
       </el-col>
       <el-col :span="1" style="margin-top:8px;">饱和度</el-col>
-      <el-col :span="4">
+      <el-col :span="5">
         <el-slider
           v-model="saturationValue"
           :min="-1"
@@ -145,7 +155,9 @@
       </el-col>
     </el-row>
     <el-row v-else-if="state == 'blendColor'"
-      type="flex" justify="center" style="margin: 0 auto;margin-top:20px;">
+      type="flex"
+      justify="center"
+      style="margin: 0 auto;margin-top:20px;">
       <el-col :span="1">
         <el-button @click="cancelBlendColor()">取消</el-button>
       </el-col>
@@ -164,7 +176,7 @@
       <el-col :span="1">
         <el-color-picker v-model="blendColorValue" @change="changeBlend('color')"></el-color-picker>
       </el-col>
-      <el-col :span="4">
+      <el-col :span="5">
         <el-slider
           v-model="blendAlphaValue"
           :min="0"
@@ -179,12 +191,14 @@
       </el-col>
     </el-row>
     <el-row v-else-if="state == 'blur'"
-      type="flex" justify="center" style="margin: 0 auto;margin-top:20px;">
+      type="flex"
+      justify="center"
+      style="margin: 0 auto;margin-top:20px;">
       <el-col :span="1">
         <el-button @click="cancelBlur()">取消</el-button>
       </el-col>
       <el-col :span="1" style="margin-top:8px;">模糊度</el-col>
-      <el-col :span="4">
+      <el-col :span="5">
         <el-slider
           v-model="blurValue"
           :min="0"
@@ -199,7 +213,9 @@
       </el-col>
     </el-row>
     <el-row v-else-if="state == 'gamma'"
-      type="flex" justify="center" style="margin: 0 auto;margin-top:20px;">
+      type="flex"
+      justify="center"
+      style="margin: 0 auto;margin-top:20px;">
       <el-col :span="1">
         <el-button @click="cancelGamma()">取消</el-button>
       </el-col>
@@ -210,7 +226,7 @@
           :min="0.01"
           :max="2.2"
           :step="0.001"
-          style="width:300px;margin: 0 auto"
+          style="width:200px;margin: 0 auto"
           @input="changeGamma('red')"
         ></el-slider>
       </el-col>
@@ -221,7 +237,7 @@
           :min="0.01"
           :max="2.2"
           :step="0.001"
-          style="width:300px;margin: 0 auto"
+          style="width:200px;margin: 0 auto"
           @input="changeGamma('green')"
         ></el-slider>
       </el-col>
@@ -232,7 +248,7 @@
           :min="0.01"
           :max="2.2"
           :step="0.001"
-          style="width:300px;margin: 0 auto"
+          style="width:200px;margin: 0 auto"
           @input="changeGamma('blue')"
         ></el-slider>
       </el-col>
@@ -240,27 +256,22 @@
         <el-button @click="saveGamma()">应用</el-button>
       </el-col>
     </el-row>
-    <el-row class="canvasDiv" type="flex" justify="center" style="margin: 0 auto;margin-top: 20px;">
-      <el-col :span="20">
-        <canvas id="canvas" :width="canvasWidth" :height="canvasHeight"></canvas>
-        <br />
-        <img :src="imgSrc" id="img" style="display:none" @load="init" />
-        <img :src="imgSrc_clip" id="img_clip" @load="init_clip" />
-        <img :src="watermarkSrc" id="watermark" />
-      </el-col>
-      <el-col :span="4">
-        <el-upload
-          class="upload-demo"
-          action="https://jsonplaceholder.typicode.com/posts/"
-          :on-preview="handlePreview"
-          :on-remove="handleRemove"
-          :file-list="imageList"
-          list-type="picture">
-          <el-button size="small" type="primary">上传图片</el-button>
-          <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
-        </el-upload>
-      </el-col>
+    <el-row class="canvasDiv" id="canvasDiv" style="margin: 0 auto;margin-top: 20px;">
+      <canvas id="canvas" :width="canvasWidth" :height="canvasHeight"></canvas>
+      <br />
+      <img :src="btnSrc" id="delBtn" style="display:none" />
+      <img :src="imgSrc" id="img" style="display:none" @load="init" />
+      <img :src="imgSrc_clip" id="img_clip" style="display:none" @load="init_clip" />
     </el-row>
+    </el-col>
+    <el-col :span="4" style="margin-top: 15px">
+      <el-upload class="upload-demo" action="https://jsonplaceholder.typicode.com/posts/"
+        :on-preview="handlePreview" :on-remove="handleRemove" :file-list="imageList" list-type="picture">
+        <el-button size="small" type="primary">上传图片</el-button>
+        <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
+      </el-upload>
+    </el-col>
+  </el-row>
   </div>
 </template>
 <script>
@@ -270,9 +281,9 @@ export default {
     return {
       canvasWidth: 1500,
       canvasHeight: 800,
-      imgSrc: "../static/test.jpg",
-      watermarkSrc: "",
+      imgSrc: "../static/douyi.jpg",
       imgSrc_clip: "",
+      btnSrc: "../static/del.png",
       shapes: [
         {
           value: "rect",
@@ -284,13 +295,14 @@ export default {
         }
       ],
       imageList: [
-        { name: "shuiyin.jpg", url: "../static/shuiyin.jpg" }
+        { name: "圣诞帽.jpg", url: "../static/圣诞帽.png" },
+        { name: "圣诞花环.png", url: "../static/圣诞花环.png" },
       ],
       value: "rect", // 裁剪框的形状值,默认为矩形
       imgAngle: 0,
       curImgAngle: 0,
       rotateMode: "", // 记录旋转模式
-      canvas: {},
+      watermarkGroup: [],
       image: new fabric.Image(),
       imgWidth: 0,
       imgHeight: 0,
@@ -313,8 +325,6 @@ export default {
       mousewheeling: false, // 是否鼠标滚轮中标志
       MISTAKE_NUM: 1, //边距容差
       MAX_SIZE: 2, // 放大倍数
-      // webglBackend: new fabric.WebglFilterBackend(), // 手动初始化2个过滤器后端，赋予切换能力
-      // canvas2dBackend: new fabric.Canvas2dFilterBackend(),
       brightness: 0, // 图片亮度
       brightnessValue: 0, // 图片亮度修改后的值
       contrast: 0,
@@ -417,6 +427,8 @@ export default {
       this.image.clipPath = new fabric.Rect({
         top: 0,
         left: 0,
+        // width: this.image.width,
+        // height: this.image.height,
         width: this.canvas.width,
         height: this.canvas.height,
         fill: "silver",
@@ -479,12 +491,24 @@ export default {
       this.mask.setCoords();
       this.canvas.preserveObjectStacking = true; // 禁止选中图层时自定义顶部
       fabric.filterBackend = fabric.initFilterBackend();
+      var max;
+      debugger
+      if(this.image.width > this.image.height){
+        max = this.image.width;
+      }else{
+        max = this.image.height;
+      }
+      if(max > fabric.textureSize){
+        fabric.textureSize = max;
+      }
       this.canvas.renderAll();
       this.imgScale = this.image.width / this.image.height;
       this.newImgLeft = this.image.left;
       this.newImgTop = this.image.top;
       this.newImgWidth = this.image.getScaledWidth();
       this.newImgHeight = this.image.getScaledHeight();
+      this.canvas.hoverCursor =
+        'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAARCAMAAADnhAzLAAABKVBMVEUAAAAUFRfDw8TIyMggICEdHh8UFRfT1NVqamtycnOFhoYzNDVPUFBWVlcjJCYmJycsLC0eHyAuLy8oKCknKCknKCkUFRclJiYoKCgiIyTOzs/a2tqoqKjIycnMzMzd3d2urq85OTsvMDKxsbLV1dZCQkS4uLlQUFA7PD6JiYnKystXV1iJiYp3d3ifn6C4uLgfICK/v78kJSezs7Ofn59XV1hyc3OamppjY2MhISJRUVFGRkYjJCQyMzRHR0clJicUFRdHR0gXGBolJiccHR4tLS0lJicVFhgoKCktLS0cHR4XGBr////5+fn19fXt7e3s7Ozq6uri4uL7+/vv7+/o6Ojn5+fc3Nzy8vLw8PDd3t7Z2dnV1dXR0dLOzs7f39/W1ta/v7+vr6+SVJ4mAAAATHRSTlMA6d3b0os79+no4+PWz827sK2om5R1bVczKPj28/Dv7u7u7u3s7Ovr6Obl5ePj4uHg3tva2dnY1NHKxL+9ubi4tK2joJqHfnxiRyMUikpN3AAAANxJREFUGNNNy+V2wkAYhOFpSPCixeru7u7eb7NJGsHt/i+CZGE5PD/fMwOplMlVMKEM3NpXH493P7IUrl8wTaH0kjIjU56ffftJ5aG8TJ/rzkOSdlVDeSs8DYflc7pMMiOhK+l4/R7CBS3GyNyiE3VevwG0rIacScJCtBHJ4jfKd961OVH+W307XgIya2xz7ygoTLfNdgrAX2qZmCcKd6zDV/gqx7PipXPX8g6+EAgnIsGo5lhecyOMYds2/JHh1pu9U4wU94lVTavRihUhrVRZze1026sYe54aATAA+Pwr8I4RqnUAAAAASUVORK5CYII=") 8 8, auto';
     },
     init_clip() {
       if (this.imgSrc_clip != "") {
@@ -1263,9 +1287,12 @@ export default {
       this.gammaGreen = this.gammaGreenValue;
       this.gammaBlue = this.gammaBlueValue;
     },
+
     // 保存图片
     save() {
       this.image.clipPath.set({
+        top: this.image.top,
+        left: this.image.left,
         width: this.image.width,
         height: this.image.height
       });
@@ -1274,18 +1301,20 @@ export default {
       //   width: this.image.width,
       //   height: this.image.height,
       // });
+      for(var i = 0;i < this.watermarkGroup.length;i++){
+        this.watermarkGroup[i].btn.set("visible", false);
+      }
       this.imgSrc_clip = this.canvas.toDataURL({
         format: "png",
-        multiplier: this.image.width/this.image.getScaledWidth(),
+        multiplier: this.image.width / this.image.getScaledWidth(),
         top: this.image.top,
         left: this.image.left,
         width: this.image.getScaledWidth(),
         height: this.image.getScaledHeight()
-        // width: this.image.width,
-        // height: this.image.height,
       });
       this.canvas.clear();
       this.canvas.renderAll();
+      console.log(JSON.stringify(this.canvas));
     },
     // 上传图片
     handleRemove(image, imageList) {
@@ -1296,30 +1325,84 @@ export default {
       this.addImage(image.url);
     },
     addImage(url) {
-      // this.watermarkSrc = url;
-      // var img = document.getElementById("watermark");
       var img = new Image();
       img.src = url;
-      var watermark;
+      var delBtn = new Image();
+      delBtn.src = this.btnSrc;
+      var watermark, btn;
       watermark = new fabric.Image(img, {
         left: 0,
         top: 0,
         width: 200,
         height: 200,
         opacity: 0.5
-      })
+      });
       watermark.setCoords();
-      this.canvas.add(watermark);
       watermark.center();
       watermark.setCoords();
+      for(var i = 0;i < this.watermarkGroup.length;i++){
+        this.watermarkGroup[i].btn.set("visible", false);
+      }
+      btn = new fabric.Image(delBtn, {
+        left: watermark.left + watermark.width - 20,
+        top: watermark.top,
+        width: 20,
+        height: 20,
+        visible: true,
+        hasControls: false,
+        lockMovementX: true,
+        lockMovementY: true,
+        lockScalingFlip: true, 
+      });
+      btn.setCoords();
+      this.canvas.add(watermark, btn);
       this.canvas.renderAll();
-      console.log(watermark.getSrc());
+      this.watermarkGroup.push({watermark: watermark, btn: btn});
+      this.watermarkListener(watermark,btn);
+      this.clickBtn(watermark,btn);
     },
-    deleteImage(){
+    // 监听水印的鼠标事件
+    watermarkListener(watermark,btn) {
+      watermark.on({
+        scaling: e=>{
+          btn.set("top", watermark.top);
+          btn.set("left", watermark.left + watermark.getScaledWidth() - 20);
+          btn.setCoords();
+          this.canvas.renderAll();
+        },
+        mousedown: e => {
+          for(var i = 0;i < this.watermarkGroup.length;i++){
+            this.watermarkGroup[i].btn.set("visible", false);
+          }
+          this.canvas.renderAll();
+        },
+        mouseup: e => {
+          btn.set("top", watermark.top);
+          btn.set("left", watermark.left + watermark.getScaledWidth() - 20);
+          btn.set("visible", true);
+          btn.setCoords();
+          this.canvas.renderAll();
+        },
+        mouseout: e => {
+          btn.set("visible", false);
+        }
+      });
+    },
+    clickBtn(watermark,btn){
+      btn.on({
+        mousedown: e => {
+          this.canvas.remove(watermark,btn);
+        }
+      })
+    },
 
-    },
   },
-  mounted() {}
+  mounted() {
+    var canvasDiv = document.getElementById("canvasDiv");
+    // this.canvasWidth = canvasDiv.style.width;
+    // debugger
+    // this.canvasHeight = canvasDiv.style.height;
+  }
 };
 </script>
 
@@ -1338,5 +1421,9 @@ canvas {
 
 .el-row {
   margin-top: 10px;
+}
+
+.inputStyle {
+   width: 200px;
 }
 </style>
