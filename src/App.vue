@@ -4,8 +4,10 @@
     <el-col :md="24">
     <el-row v-if="state == ''">
       <el-button-group>
-        <el-button icon="el-icon-refresh-left" type="primary" :disabled="returnPrevious"></el-button>
-        <el-button icon="el-icon-refresh-right" type="primary" :disabled="returnNext"></el-button>
+        <el-button icon="el-icon-refresh-left" type="primary" :disabled="returnPrevious"
+          @click="returnBack('previous')"></el-button>
+        <el-button icon="el-icon-refresh-right" type="primary" :disabled="returnNext"
+          @click="returnBack('next')"></el-button>
       </el-button-group>
       <el-button-group>
         <el-button type="primary" @click="addMask()">裁剪</el-button>
@@ -280,7 +282,7 @@
       <!-- <canvas id="canvas_copy" :width="canvasWidth" :height="canvasHeight"></canvas> -->
       <br />
       <img :src="imgSrc" id="img" style="display:none;" @load="init" />
-      <img :src="imgSrc_clip" id="img_clip" style="display:none;" @load="init_clip" />
+      <img :src="imgSrc_clip" id="img_clip" style="" @load="init_clip" />
       </el-col>
     </el-row>
     </el-col>
@@ -320,6 +322,7 @@ export default {
       ],
       drawer: false, // 右侧抽屉可见性
       jsonList: [], // 用json记录图片修改后的数据
+      currIndex: -1, // 记录当前图片的存在数组中的索引
       returnPrevious: true, // 上一步按钮禁用状态
       returnNext: true, // 下一步按钮禁用状态
       value: "rect", // 裁剪框的形状值,默认为矩形
@@ -470,6 +473,18 @@ export default {
       this.image.clipPath.setCoords();
       this.canvas.renderAll();
       this.addMask();
+    },
+    currIndex: function() {
+      if(this.currIndex > 0){
+        this.returnPrevious = false;
+      }else{
+        this.returnPrevious = true;
+      }
+      if(this.currIndex < this.jsonList.length - 1){
+        this.returnNext = false;
+      }else{
+        this.returnNext = true;
+      }
     }
   },
   methods: {
@@ -477,6 +492,7 @@ export default {
       var img = document.getElementById("img");
       var self = this;
       this.canvas = this.__canvas = new fabric.Canvas("canvas");
+      // this.canvas.loadFromJSON({"version":"3.5.1","objects":[{"type":"image","version":"3.5.1","originX":"left","originY":"top","left":427.78,"top":0,"width":2303,"height":1810,"fill":"rgb(0,0,0)","stroke":null,"strokeWidth":0,"strokeDashArray":null,"strokeLineCap":"butt","strokeDashOffset":0,"strokeLineJoin":"miter","strokeMiterLimit":4,"scaleX":0.46,"scaleY":0.46,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","transformMatrix":null,"skewX":0,"skewY":0,"clipPath":{"type":"rect","version":"3.5.1","originX":"left","originY":"top","left":0,"top":0,"width":1904,"height":824,"fill":"silver","stroke":"silver","strokeWidth":1,"strokeDashArray":[5,5],"strokeLineCap":"butt","strokeDashOffset":0,"strokeLineJoin":"miter","strokeMiterLimit":4,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","paintFirst":"fill","globalCompositeOperation":"source-over","transformMatrix":null,"skewX":0,"skewY":0,"rx":0,"ry":0,"inverted":false,"absolutePositioned":true},"crossOrigin":"anonymous","cropX":0,"cropY":0,"src":"http://192.168.10.67:8080/static/douyi.jpg","filters":[]}]});
       this.image = new fabric.Image(img, {
         left: 0,
         top: 0,
@@ -535,10 +551,8 @@ export default {
       this.canvas.hoverCursor =
         'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAARCAMAAADnhAzLAAABKVBMVEUAAAAUFRfDw8TIyMggICEdHh8UFRfT1NVqamtycnOFhoYzNDVPUFBWVlcjJCYmJycsLC0eHyAuLy8oKCknKCknKCkUFRclJiYoKCgiIyTOzs/a2tqoqKjIycnMzMzd3d2urq85OTsvMDKxsbLV1dZCQkS4uLlQUFA7PD6JiYnKystXV1iJiYp3d3ifn6C4uLgfICK/v78kJSezs7Ofn59XV1hyc3OamppjY2MhISJRUVFGRkYjJCQyMzRHR0clJicUFRdHR0gXGBolJiccHR4tLS0lJicVFhgoKCktLS0cHR4XGBr////5+fn19fXt7e3s7Ozq6uri4uL7+/vv7+/o6Ojn5+fc3Nzy8vLw8PDd3t7Z2dnV1dXR0dLOzs7f39/W1ta/v7+vr6+SVJ4mAAAATHRSTlMA6d3b0os79+no4+PWz827sK2om5R1bVczKPj28/Dv7u7u7u3s7Ovr6Obl5ePj4uHg3tva2dnY1NHKxL+9ubi4tK2joJqHfnxiRyMUikpN3AAAANxJREFUGNNNy+V2wkAYhOFpSPCixeru7u7eb7NJGsHt/i+CZGE5PD/fMwOplMlVMKEM3NpXH493P7IUrl8wTaH0kjIjU56ffftJ5aG8TJ/rzkOSdlVDeSs8DYflc7pMMiOhK+l4/R7CBS3GyNyiE3VevwG0rIacScJCtBHJ4jfKd961OVH+W307XgIya2xz7ygoTLfNdgrAX2qZmCcKd6zDV/gqx7PipXPX8g6+EAgnIsGo5lhecyOMYds2/JHh1pu9U4wU94lVTavRihUhrVRZze1026sYe54aATAA+Pwr8I4RqnUAAAAASUVORK5CYII=") 8 8, auto';
       console.log("初始化图片");
-      debugger
-      console.log(this.canvas.toJSON());
-      // console.log(this.canvas.toJSON());
-      this.jsonList.push(this.canvas.toJSON());
+      // console.log(JSON.stringify(this.canvas))
+      this.saveJson();      
     },
     init_clip() {
       if (this.imgSrc_clip != "") {
@@ -585,8 +599,8 @@ export default {
         this.imgScaledWidth = this.image.getScaledWidth();
         this.imgScaledHeight = this.image.getScaledHeight();
         console.log("重载图片");
-        console.log(this.canvas.toJSON());
-        this.jsonList.push(this.canvas.toJSON());
+        this.canvas.renderAll();
+        this.saveJson();  
       }
     },
     refreshScale() {
@@ -827,8 +841,6 @@ export default {
       this.scaleImage("off");
       this.scaleMask("off");
       this.state = "";
-      this.returnPrevious = false;
-      
     },
     // 监听裁剪框的缩放
     scaleMask(command) {
@@ -954,10 +966,7 @@ export default {
       this.imgScaledWidth = this.image.getScaledWidth();
       this.imgScaledHeight = this.image.getScaledHeight();
       this.state = "";
-      console.log(this.canvas.toJSON());
-      this.jsonList.push(this.canvas.toJSON());
-      this.returnPrevious = false;
-      
+      this.saveJson();  
     },
     
     // 旋转相关方法
@@ -1133,9 +1142,7 @@ export default {
       this.imgSrc_clip = src;
       this.canvas.renderAll();
       this.state = "";
-      this.scaleImage("off");
-      this.returnPrevious = false;
-      
+      this.scaleImage("off"); 
     },
 
     // 图像滤镜相关方法
@@ -1175,10 +1182,7 @@ export default {
     saveBrightness() {
       this.state = "";
       this.brightness = this.brightnessValue;
-      console.log(this.canvas.toJSON());
-      this.jsonList.push(this.canvas.toJSON());
-      this.returnPrevious = false;
-      
+      this.saveJson();  
     },
     // 对比度
     chooseContrast() {
@@ -1201,10 +1205,7 @@ export default {
     saveContrast() {
       this.state = "";
       this.contrast = this.contrastValue;
-      console.log(this.canvas.toJSON());
-      this.jsonList.push(this.canvas.toJSON());
-      this.returnPrevious = false;
-      
+      this.saveJson();  
     },
     // 饱和度
     chooseSaturation() {
@@ -1227,10 +1228,7 @@ export default {
     saveSaturation() {
       this.state = "";
       this.saturation = this.saturationValue;
-      console.log(this.canvas.toJSON());
-      this.jsonList.push(this.canvas.toJSON());
-      this.returnPrevious = false;
-      
+      this.saveJson();  
     },
     // 混合颜色
     chooseBlendColor() {
@@ -1266,10 +1264,7 @@ export default {
       this.blendColor = this.blendColorValue;
       this.blendMode = this.blendModeValue;
       this.blendAlpha = this.blendAlphaValue;
-      console.log(this.canvas.toJSON());
-      this.jsonList.push(this.canvas.toJSON());
-      this.returnPrevious = false;
-      
+      this.saveJson();  
     },
     // 锐化
     chooseSharpen() {
@@ -1300,10 +1295,7 @@ export default {
     saveSharpen() {
       this.state = "";
       this.sharpen = this.sharpenValue;
-      console.log(this.canvas.toJSON());
-      this.jsonList.push(this.canvas.toJSON());
-      this.returnPrevious = false;
-      
+      this.saveJson();  
     },
     // 伽马
     chooseGamma() {
@@ -1342,10 +1334,7 @@ export default {
       this.gammaRed = this.gammaRedValue;
       this.gammaGreen = this.gammaGreenValue;
       this.gammaBlue = this.gammaBlueValue;
-      console.log(this.canvas.toJSON());
-      this.jsonList.push(this.canvas.toJSON());
-      this.returnPrevious = false;
-      
+      this.saveJson();  
     },
     // 模糊
     chooseBlur() {
@@ -1368,10 +1357,7 @@ export default {
     saveBlur() {
       this.state = "";
       this.blur = this.blurValue;
-      console.log(this.canvas.toJSON());
-      this.jsonList.push(this.canvas.toJSON());
-      this.returnPrevious = false;
-      
+      this.saveJson();  
     },
 
     // 保存图片
@@ -1460,11 +1446,8 @@ export default {
       this.canvas.renderAll();
       this.watermarkGroup.push({watermark: watermark, btn: btn});
       this.clickBtn(watermark,btn);
-      this.watermarkListener(watermark,btn);
-      console.log(this.canvas.toJSON());
-      this.jsonList.push(this.canvas.toJSON());
-      this.returnPrevious = false;
-      
+      this.watermarkListener(watermark,btn);;
+      this.saveJson();    
     },
     // 监听水印的鼠标事件
     watermarkListener(watermark,btn) {
@@ -1518,14 +1501,39 @@ export default {
           }
           this.canvas.remove(watermark,btn);
           console.log("delete");
-          console.log(this.canvas.toJSON());
-          this.jsonList.push(this.canvas.toJSON());
-          this.returnPrevious = false;
-          
+          this.saveJson();        
         }
       })
     },
-
+    saveJson(){
+      if(this.currIndex == 0 && this.jsonList.length > 1){
+        this.jsonList.splice(1);
+      }
+      this.jsonList.push(this.canvas.toJSON());
+      this.currIndex = this.jsonList.length - 1;  
+    },
+    returnBack(command){
+      // this.jsonList[this.currIndex] = this.canvas.toJSON();
+      console.log(this.jsonList)
+      
+      if(command == "previous"){
+        this.currIndex -= 1;
+      }
+      else if(command == "next"){
+        this.currIndex += 1;
+      }
+      var self = this
+      
+      var currentObj = this.jsonList[this.currIndex];
+      // this.canvas.loadFromJSON(currentObj);
+      this.canvas.loadFromJSON(currentObj, this.canvas.renderAll.bind(this.canvas),
+        function(o, object) {
+          debugger
+          self.image = object;
+      });
+      this.canvas.renderAll();
+      
+    }
   },
   mounted() {
     var canvasDiv = document.getElementById("canvasDiv");
