@@ -475,11 +475,13 @@ export default {
       if (this.lockScale) {
         this.imgScaledHeight = this.imgScaledWidth / this.imgScale;
       }
+      console.log(this.imgScaledWidth + "," + this.imgScaledHeight);
     },
     imgScaledHeight: function() {
       if (this.lockScale) {
         this.imgScaledWidth = this.imgScaledHeight * this.imgScale;
       }
+      console.log(this.imgScaledWidth + "," + this.imgScaledHeight);
     },
     maskWidth: function() {
       if (this.maskWidth > this.image.getScaledWidth())
@@ -1695,7 +1697,6 @@ export default {
             self.scaleImage();
             self.imgScaledWidth = self.image.getScaledWidth();
             self.imgScaledHeight = self.image.getScaledHeight();
-            console.log(self.imgScaledWidth);
           }
         }
       );
