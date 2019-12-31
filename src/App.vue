@@ -19,64 +19,91 @@
           </el-button-group>
           <el-button-group>
             <el-button type="primary" @click="addMask()">裁剪</el-button>
-            <el-button type="primary" @click="chooseResetSize()">尺寸</el-button>
-            <el-button type="primary" @click="addRotateMask()">旋转</el-button>
-            <el-button type="primary" @click="chooseBrightness()">亮度</el-button>
+            <!-- <el-button type="primary" @click="chooseResetSize()">尺寸</el-button>
+            <el-button type="primary" @click="addRotateMask()">旋转</el-button> -->
+            <el-button type="primary" @click="chooseFilters()">色彩</el-button>
+            <!-- <el-button type="primary" @click="chooseBrightness()">亮度</el-button>
             <el-button type="primary" @click="chooseContrast()">对比度</el-button>
             <el-button type="primary" @click="chooseSaturation()">饱和度</el-button>
             <el-button type="primary" @click="chooseBlendColor()">混合颜色</el-button>
             <el-button type="primary" @click="chooseSharpen()">锐化</el-button>
             <el-button type="primary" @click="chooseGamma()">伽马</el-button>
-            <el-button type="primary" @click="chooseBlur()">模糊</el-button>
+            <el-button type="primary" @click="chooseBlur()">模糊</el-button> -->
             <el-button type="primary" @click="drawer = true">添加图片</el-button>
           </el-button-group>
           <el-button type="primary" @click="save()">保存</el-button>
         </el-row>
         <el-row v-else-if="state == 'clip'">
-          请选择裁剪框的形状&nbsp;&nbsp;
-          <el-select v-model="value" placeholder="请选择裁剪框的形状" style="width: 100px;">
-            <el-option
-              v-for="item in shapes"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            ></el-option>
-          </el-select>
-          <el-row v-if="value == 'rect'">
-            <el-button-group>
+          <el-row type="flex" justify="center">
+            <el-col :md="1">
               <el-button @click="removeMask()">取消</el-button>
-              <el-button @click="clipImage('1:1')">1:1</el-button>
-              <el-button @click="clipImage('3:2')">3:2</el-button>
-              <el-button @click="clipImage('4:3')">4:3</el-button>
-              <el-button @click="clipImage('16:9')">16:9</el-button>
+            </el-col>
+            <el-col :md="4">宽&nbsp;&nbsp;
+              <el-input-number v-model="imgScaledWidth" class="inputStyle" :precision="0"
+                controls-position="right" :min="1" :max="imgWidth"></el-input-number>
+            </el-col>
+            <el-col :md="1">
+              <el-button icon="el-icon-lock" type="primary" v-if="lockScale==true"
+                @click="lockScale=false"></el-button>
+              <el-button icon="el-icon-unlock" type="primary" v-else @click="lockScale=true"></el-button>
+            </el-col>
+            <el-col :md="4">高&nbsp;&nbsp;
+              <el-input-number v-model="imgScaledHeight" class="inputStyle" :precision="0"
+                controls-position="right" :min="1" :max="imgWidth"></el-input-number>
+            </el-col>
+            <el-col :md="1">
               <el-button @click="toClip()">应用</el-button>
-            </el-button-group>&nbsp;&nbsp;
-            框的宽度&nbsp;
-            <el-input-number class="inputStyle"
-              v-model="maskWidth"
-              :precision="0"
-              controls-position="right"
-              :min="1"
-              :max="imgWidth"></el-input-number>&nbsp;
-            框的高度&nbsp;
-            <el-input-number class="inputStyle"
-              v-model="maskHeight"
-              :precision="0"
-              controls-position="right"
-              :min="1"
-              :max="imgWidth"></el-input-number>
+            </el-col>
           </el-row>
-          <el-row v-else-if="value == 'circle'">
-            <el-button @click="removeMask()">取消</el-button>&nbsp;&nbsp;
-            框的半径&nbsp;
-            <el-input-number
-              :precision="0"
-              v-model="maskRadius"
-              controls-position="right"
-              :min="1"
-              :max="canvasHeight/2"
-            ></el-input-number>&nbsp;&nbsp;
-            <el-button @click="toClip()">应用</el-button>
+          <el-row>
+            请选择裁剪框的形状&nbsp;&nbsp;
+            <el-select v-model="value" placeholder="请选择裁剪框的形状" style="width: 100px;">
+              <el-option
+                v-for="item in shapes"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+            <el-row v-if="value == 'rect'">
+              <el-button-group>
+                <!-- <el-button @click="removeMask()">取消</el-button> -->
+                <el-button @click="clipImage('1:1')">1:1</el-button>
+                <el-button @click="clipImage('3:2')">3:2</el-button>
+                <el-button @click="clipImage('4:3')">4:3</el-button>
+                <el-button @click="clipImage('16:9')">16:9</el-button>
+                <!-- <el-button @click="toClip()">应用</el-button> -->
+              </el-button-group>&nbsp;&nbsp;
+              框的宽度&nbsp;
+              <el-input-number class="inputStyle"
+                v-model="maskWidth"
+                :precision="0"
+                controls-position="right"
+                :min="1"
+                :max="imgWidth"></el-input-number>&nbsp;
+              框的高度&nbsp;
+              <el-input-number class="inputStyle"
+                v-model="maskHeight"
+                :precision="0"
+                controls-position="right"
+                :min="1"
+                :max="imgWidth"></el-input-number>
+            </el-row>
+            <el-row v-else-if="value == 'circle'">
+              <!-- <el-button @click="removeMask()">取消</el-button>&nbsp;&nbsp; -->
+              框的半径&nbsp;
+              <el-input-number :precision="0" v-model="maskRadius" controls-position="right"
+                :min="1" :max="canvasHeight/2"></el-input-number>&nbsp;&nbsp;
+              <!-- <el-button @click="toClip()">应用</el-button> -->
+            </el-row>
+          </el-row>
+          <el-row>
+            <el-button-group>
+              <el-button @click="changeAngle('left')">左旋转90</el-button>
+              <el-button @click="changeAngle('right')">右旋转90</el-button>
+              <el-button @click="changeAngle('x')">水平翻转</el-button>
+              <el-button @click="changeAngle('y')">垂直翻转</el-button>
+            </el-button-group>
           </el-row>
         </el-row>
         <el-row v-else-if="state == 'resetSize'"
@@ -130,6 +157,77 @@
             <el-button @click="changeAngle('y')">垂直翻转</el-button>
             <el-button @click="toRotate()">应用</el-button>
           </el-button-group>
+        </el-row>
+        <el-row v-else-if="state == 'filters'">
+          <el-row type="flex" justify="center">
+            <el-col :md="1" class="filterName">亮度</el-col>
+            <el-col :md="2">
+              <el-slider class="filterSlider" v-model="brightnessValue"
+                :min="-1" :max="1" :step="0.000001" @input="changeBrightness()"></el-slider>
+            </el-col>
+            <el-col :md="1" class="filterName">对比度</el-col>
+            <el-col :md="2">
+              <el-slider class="filterSlider" v-model="contrastValue"
+                :min="-1" :max="1" :step="0.000001" @input="changeContrast()"></el-slider>
+            </el-col>
+            <el-col :md="1" class="filterName">饱和度</el-col>
+            <el-col :md="2">
+              <el-slider class="filterSlider" v-model="saturationValue"
+                :min="-1" :max="1" :step="0.000001" @input="changeSaturation()"></el-slider>
+            </el-col>
+            <el-col :md="1" class="filterName">模糊度</el-col>
+            <el-col :md="2">
+              <el-slider class="filterSlider" v-model="blurValue"
+                :min="0" :max="1" :step="0.0001" @input="changeBlur()"></el-slider>
+            </el-col>
+          </el-row>
+          <el-row type="flex" justify="center">
+            <!-- <el-col :md="1" class="filterName" style="margin-left:0px;">伽马</el-col> -->
+            <el-col :md="1" class="filterName">red</el-col>
+            <el-col :md="2">
+              <el-slider class="filterSlider" v-model="gammaRedValue"
+                :min="0.01" :max="2.2" :step="0.001" @input="changeGamma('red')"></el-slider>
+            </el-col>
+            <el-col :md="1" class="filterName">green</el-col>
+            <el-col :md="2">
+              <el-slider class="filterSlider" v-model="gammaGreenValue"
+                :min="0.01" :max="2.2" :step="0.001" @input="changeGamma('green')"></el-slider>
+            </el-col>
+            <el-col :md="1" class="filterName">blue</el-col>
+            <el-col :md="2">
+              <el-slider class="filterSlider" v-model="gammaBlueValue"
+                :min="0.01" :max="2.2" :step="0.001" @input="changeGamma('blue')"></el-slider>
+            </el-col>
+            <el-col :md="1" class="filterName">锐化</el-col>
+            <el-col :md="2">
+              <el-slider class="filterSlider" v-model="sharpenValue"
+                :min="1" :max="100" :step="1" @input="changeSharpen()"></el-slider>
+            </el-col>
+          </el-row>
+          <el-row type="flex" justify="center">
+            <el-col :md="1">
+              <el-button @click="cancelFilters()">取消</el-button>
+            </el-col>
+            <el-col :md="1" class="filterName">模式</el-col>
+            <el-col :md="2">
+              <el-select v-model="blendModeValue" @change="changeBlend('mode')">
+                <el-option v-for="item in blendModeList"
+                  :key="item.value" :label="item.label" :value="item.value"></el-option>
+              </el-select>
+            </el-col>
+            <el-col :md="1" class="filterName">颜色</el-col>
+            <el-col :md="1">
+              <el-color-picker v-model="blendColorValue" @change="changeBlend('color')"
+                style="margin-right: 50px;"></el-color-picker>
+            </el-col>
+            <el-col :md="2">
+              <el-slider class="filterSlider" v-model="blendAlphaValue"
+                :min="0" :max="1" :step="0.01" @input="changeBlend('alpha')"></el-slider>
+            </el-col>
+            <el-col :md="1" style="margin-left: 25px;">
+              <el-button @click="saveFilters()">应用</el-button>
+            </el-col>
+          </el-row>
         </el-row>
         <el-row v-else-if="state == 'brightness'"
           type="flex"
@@ -197,9 +295,7 @@
             <el-button @click="saveSaturation()">应用</el-button>
           </el-col>
         </el-row>
-        <el-row v-else-if="state == 'blendColor'"
-          type="flex"
-          justify="center"
+        <el-row v-else-if="state == 'blendColor'" type="flex" justify="center"
           style="margin: 0 auto;margin-top:20px;">
           <el-col :md="1">
             <el-button @click="cancelBlendColor()">取消</el-button>
@@ -475,24 +571,30 @@ export default {
       if (this.lockScale) {
         this.imgScaledHeight = this.imgScaledWidth / this.imgScale;
       }
-      console.log(this.imgScaledWidth + "," + this.imgScaledHeight);
+      // this.toResetSize();
     },
     imgScaledHeight: function() {
       if (this.lockScale) {
         this.imgScaledWidth = this.imgScaledHeight * this.imgScale;
       }
-      console.log(this.imgScaledWidth + "," + this.imgScaledHeight);
+      // this.toResetSize();
     },
     maskWidth: function() {
       if (this.maskWidth > this.image.getScaledWidth())
         this.maskWidth = this.image.getScaledWidth();
       this.mask.set("width", this.maskWidth);
+      this.mask.setCoords();
+      this.mask.center();
+      this.mask.setCoords();
       this.canvas.renderAll();
     },
     maskHeight: function() {
       if (this.maskHeight > this.image.getScaledHeight())
         this.maskHeight = this.image.getScaledHeight();
       this.mask.set("height", this.maskHeight);
+      this.mask.setCoords();
+      this.mask.center();
+      this.mask.setCoords();
       this.canvas.renderAll();
     },
     maskRadius: function() {
@@ -706,7 +808,11 @@ export default {
           // scaleY: this.image.scaleY,
           // selectionBackgroundColor: "rgba(255, 255, 255, 0)",
           padding: 0,
-          angle: this.image.angle
+          angle: this.image.angle,
+          lockRotation: true,
+          hasControls: false,
+          lockMovementX: true,
+          lockMovementY: true,
         });
         // this.mask.width = this.newImgWidth;
         // this.mask.height = this.newImgHeight;
@@ -789,10 +895,10 @@ export default {
         } else {
           if (this.imgScale >= 1) {
             this.mask.set("width", max / this.mask.scaleX);
-            this.mask.set("height", (2 / 3) * this.image.width);
+            this.mask.set("height", (2 / 3) * this.mask.width);
           } else {
             this.mask.set("height", max / this.mask.scaleY);
-            this.mask.set("width", (3 / 2) * this.image.height);
+            this.mask.set("width", (3 / 2) * this.mask.height);
           }
         }
       } else if (command == "4:3") {
@@ -807,10 +913,10 @@ export default {
         } else {
           if (this.imgScale >= 1) {
             this.mask.set("width", max / this.mask.scaleX);
-            this.mask.set("height", (3 / 4) * this.image.width);
+            this.mask.set("height", (3 / 4) * this.mask.width);
           } else {
             this.mask.set("height", max / this.mask.scaleY);
-            this.mask.set("width", (4 / 3) * this.image.height);
+            this.mask.set("width", (4 / 3) * this.mask.height);
           }
         }
       } else if (command == "16:9") {
@@ -825,10 +931,10 @@ export default {
         } else {
           if (this.imgScale >= 1) {
             this.mask.set("width", max / this.mask.scaleX);
-            this.mask.set("height", (9 / 16) * this.image.width);
+            this.mask.set("height", (9 / 16) * this.mask.width);
           } else {
             this.mask.set("height", max / this.mask.scaleY);
-            this.mask.set("width", (16 / 9) * this.image.height);
+            this.mask.set("width", (16 / 9) * this.mask.height);
           }
           this.mask.set("top", this.image.top);
           this.mask.set("left", this.image.left);
@@ -836,6 +942,7 @@ export default {
       }
       this.mask.setCoords();
       this.mask.center();
+      this.mask.setCoords();
       this.canvas.renderAll();
       this.maskWidth = this.mask.getScaledWidth();
       this.maskHeight = this.mask.getScaledHeight();
@@ -845,8 +952,6 @@ export default {
       this.image.setCoords();
       this.newImgLeft = this.mask.left;
       this.newImgTop = this.mask.top;
-      // if (this.newImgTop < 0) this.newImgTop = 0;
-      // if (this.newImgLeft < 0) this.newImgLeft = 0;
       this.newImgWidth = this.maskWidth;
       this.newImgHeight = this.maskHeight;
       this.newImgScaleX = 1;
@@ -945,10 +1050,10 @@ export default {
             var height = (oriHeight = this.image.getScaledHeight());
             var oriLeft = this.image.get("left");
             var oriTop = this.image.get("top");
-            // var clipWidth = this.image.clipPath.getScaledWidth();
-            // var clipHeight = this.image.clipPath.getScaledHeight();
-            var clipWidth = this.imgScaledWidth;
-            var clipHeight = this.imgScaledHeight;
+            // var clipWidth = this.imgScaledWidth;
+            // var clipHeight = this.imgScaledHeight;
+            var clipWidth = this.mask.getScaledWidth();
+            var clipHeight = this.mask.getScaledHeight();
             var ratio = width / height;
             width = width + delta / 1;
             height = height + delta / 1;
@@ -959,11 +1064,9 @@ export default {
                 this.image.scaleToHeight(clipHeight);
               }
               this.keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight);
-            } else if (
-              delta > 0 &&
+            } else if (delta > 0 &&
               (width >= this.image.get("width") * this.MAX_SIZE ||
-                height >= this.image.get("height") * this.MAX_SIZE)
-            ) {
+                height >= this.image.get("height") * this.MAX_SIZE)) {
             } else {
               this.image.scaleToWidth(width);
               this.keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight);
@@ -1244,6 +1347,92 @@ export default {
         this.canvas.renderAll();
       }
     },
+    chooseFilters(){
+      this.state='filters';
+      this.applyFilter(5, new fabric.Image.filters.Brightness({
+          brightness: parseFloat(this.brightness)
+        })
+      );
+      this.applyFilter(6, new fabric.Image.filters.Contrast({
+          contrast: parseFloat(this.contrast)
+        })
+      );
+      this.applyFilter(7, new fabric.Image.filters.Saturation({
+          saturation: parseFloat(this.saturation)
+        })
+      );
+      this.applyFilter(12, new fabric.Image.filters.Convolute({
+          matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0]
+        })
+      );
+      this.applyFilter(11, new fabric.Image.filters.Blur({
+          value: parseFloat(this.blur)
+        })
+      );
+      this.applyFilter(17, new fabric.Image.filters.Gamma({
+          gamma: [this.gammaRed, this.gammaGreen, this.gammaBlue]
+        })
+      );
+      this.applyFilter(16, new fabric.Image.filters.BlendColor({
+          color: this.blendColor,
+          mode: this.blendMode,
+          alpha: this.blendAlpha
+        })
+      );
+      this.blendColorValue = this.blendColor;
+      this.blendModeValue = this.blendMode;
+      this.blendAlphaValue = this.blendAlpha;
+      this.gammaRedValue = this.gammaRed;
+      this.gammaGreenValue = this.gammaGreen;
+      this.gammaBlueValue = this.gammaBlue;
+      this.blurValue = this.blur;
+      this.sharpenValue = this.sharpen;
+      this.saturationValue = this.saturation;
+      this.contrastValue = this.contrast;
+      this.brightnessValue = this.brightness;
+    },
+    cancelFilters(){
+      this.state = "";
+      this.applyFilterValue(5, "brightness", parseFloat(this.brightness));
+      this.applyFilterValue(6, "contrast", parseFloat(this.contrast));
+      this.applyFilterValue(7, "saturation", parseFloat(this.saturation));
+      var a = -(this.sharpen - 1) / 4;
+      this.applyFilterValue(12, "matrix", [
+        0,
+        a,
+        0,
+        a,
+        this.sharpen,
+        a,
+        0,
+        a,
+        0
+      ]);
+      this.applyFilterValue(11, "blur", parseFloat(this.blur));
+      this.applyFilterValue(17, "gamma", [
+        parseFloat(this.gammaRed),
+        parseFloat(this.gammaGreen),
+        parseFloat(this.gammaBlue)
+      ]);
+      this.applyFilterValue(16, "color", this.blendColor);
+      this.applyFilterValue(16, "mode", this.blendMode);
+      this.applyFilterValue(16, "alpha", this.blendAlpha);
+    },
+    saveFilters(){
+      this.state = "";
+      this.brightness = this.brightnessValue;
+      this.contrast = this.contrastValue;
+      this.saturation = this.saturationValue;
+      this.sharpen = this.sharpenValue;
+      this.blur = this.blurValue;
+      this.gammaRed = this.gammaRedValue;
+      this.gammaGreen = this.gammaGreenValue;
+      this.gammaBlue = this.gammaBlueValue;
+      this.blendColor = this.blendColorValue;
+      this.blendMode = this.blendModeValue;
+      this.blendAlpha = this.blendAlphaValue;
+      this.saveJson();
+    },
     // 亮度
     chooseBrightness() {
       this.state = "brightness";
@@ -1402,19 +1591,6 @@ export default {
         a,
         0
       ]);
-      console.log(
-        "[ 0, " +
-          a +
-          ", 0, " +
-          a +
-          ", " +
-          this.sharpen +
-          ", " +
-          a +
-          ", 0, " +
-          a +
-          ", 0 ]"
-      );
     },
     saveSharpen() {
       this.state = "";
@@ -1598,8 +1774,6 @@ export default {
           this.canvas.renderAll();
         },
         mousedown: e => {
-          console.log(btn);
-          debugger;
           if (
             !(
               watermark.left + watermark.getScaledWidth() - 30 < e.pointer.x &&
@@ -1631,8 +1805,39 @@ export default {
               e.pointer.y < watermark.top + 30
             )
           ) {
-            btn.set("top", watermark.top + 10);
-            btn.set("left", watermark.left + watermark.getScaledWidth() - 30);
+            var pointer = watermark.aCoords.tr;
+            if(watermark.angle <= 30 && watermark.angle >= 0){
+              btn.set("top", pointer.y + 10);
+              btn.set("left", pointer.x - 30);
+            }else if(watermark.angle <= 90 && watermark.angle > 30){
+              btn.set("top", pointer.y - 15);
+              btn.set("left", pointer.x - 30);
+            }else if(watermark.angle <= 120 && watermark.angle > 90){
+              btn.set("top", pointer.y - 30);
+              btn.set("left", pointer.x - 30);
+            }else if(watermark.angle <= 150 && watermark.angle > 120){
+              btn.set("top", pointer.y - 30);
+              btn.set("left", pointer.x - 15);
+            }else if(watermark.angle <= 180 && watermark.angle > 150){
+              btn.set("top", pointer.y - 30);
+              btn.set("left", pointer.x + 10);
+            }else if(watermark.angle <= 210 && watermark.angle > 180){
+              btn.set("top", pointer.y - 15);
+              btn.set("left", pointer.x + 10);
+            }else if(watermark.angle <= 245 && watermark.angle > 210){
+              btn.set("top", pointer.y - 15);
+              btn.set("left", pointer.x + 10);
+            }else if(watermark.angle <= 270 && watermark.angle > 245){
+              btn.set("top", pointer.y + 10);
+              btn.set("left", pointer.x + 10);
+            }else if(watermark.angle <= 300 && watermark.angle > 270){
+              btn.set("top", pointer.y + 15);
+              btn.set("left", pointer.x + 10);
+            }else if(watermark.angle <= 360 && watermark.angle > 300){
+              btn.set("top", pointer.y + 10);
+              btn.set("left", pointer.x - 15);
+            }
+            console.log(watermark.angle);
             btn.set("visible", true);
             btn.setCoords();
             this.canvas.renderAll();
@@ -1659,12 +1864,16 @@ export default {
       });
     },
     // 回退
-    saveJson() {
+    saveJson() {    
       if (this.currIndex == 0 && this.jsonList.length > 1) {
         this.jsonList.splice(1);
       }
       this.jsonList.push(this.canvas.toJSON());
       this.currIndex = this.jsonList.length - 1;
+      // this.brightness = this.contrast = this.saturation = this.blendAlpha = this.blur = 0;
+      // this.brightnessValue = this.contrastValue = this.saturationValue = this.blendAlphaValue = this.blurValue = 0;
+      // this.gammaRed = this.gammaGreen = this.gammaBlue = this.sharpen = 1;
+      // this.gammaRedValue = this.gammaGreenValue = this.gammaBlueValue = this.sharpenValue = 1;
     },
     returnBack(command) {
       this.jsonList[this.currIndex] = this.canvas.toJSON();
@@ -1734,9 +1943,11 @@ export default {
   margin-left: 15px;
 }
 
+
 .filterSlider {
-  width: 240px;
-  margin-right: 20px;
+  /* width: 240px;
+  margin-right: 20px; */
+  width: 100%;
 }
 
 canvas {
