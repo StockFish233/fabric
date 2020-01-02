@@ -4,18 +4,12 @@
       <el-col :md="24">
         <el-row v-if="state == ''">
           <el-button-group>
-            <el-button
-              icon="el-icon-refresh-left"
-              type="primary"
-              :disabled="returnPrevious"
-              @click="returnBack('previous')"
-            ></el-button>
-            <el-button
-              icon="el-icon-refresh-right"
-              type="primary"
-              :disabled="returnNext"
-              @click="returnBack('next')"
-            ></el-button>
+            <el-button icon="el-icon-refresh-left"
+              type="primary" :disabled="returnPrevious"
+              @click="returnBack('previous')"></el-button>
+            <el-button icon="el-icon-refresh-right"
+              type="primary" :disabled="returnNext"
+              @click="returnBack('next')"></el-button>
           </el-button-group>
           <el-button-group>
             <el-button type="primary" @click="addMask()">裁剪</el-button>
@@ -38,18 +32,18 @@
             <el-col :md="1">
               <el-button @click="removeMask()">取消</el-button>
             </el-col>
-            <el-col :md="4">宽&nbsp;&nbsp;
-              <el-input-number v-model="imgScaledWidth" class="inputStyle" :precision="0"
-                controls-position="right" :min="1" :max="imgWidth"></el-input-number>
+            <el-col :md="3">目前图片的宽&nbsp;&nbsp;
+              <el-input-number v-model="imgScaledWidth" class="inputStyle" :precision="0" @change="changeImgScaledWidth()"
+                :min="1" :max="imgWidth" :controls="false"></el-input-number>
             </el-col>
             <el-col :md="1">
-              <el-button icon="el-icon-lock" type="primary" v-if="lockScale==true"
-                @click="lockScale=false"></el-button>
-              <el-button icon="el-icon-unlock" type="primary" v-else @click="lockScale=true"></el-button>
+              <el-button icon="el-icon-lock" type="primary" v-if="lockImageScale==true"
+                @click="lockImageScale=false"></el-button>
+              <el-button icon="el-icon-unlock" type="primary" v-else @click="lockImageScale=true"></el-button>
             </el-col>
-            <el-col :md="4">高&nbsp;&nbsp;
-              <el-input-number v-model="imgScaledHeight" class="inputStyle" :precision="0"
-                controls-position="right" :min="1" :max="imgWidth"></el-input-number>
+            <el-col :md="3">目前图片的高&nbsp;&nbsp;
+              <el-input-number v-model="imgScaledHeight" class="inputStyle" :precision="0" @change="changeImgScaledHeight()"
+                :controls="false" :min="1" :max="imgWidth"></el-input-number>
             </el-col>
             <el-col :md="1">
               <el-button @click="toClip()">应用</el-button>
@@ -58,43 +52,29 @@
           <el-row>
             请选择裁剪框的形状&nbsp;&nbsp;
             <el-select v-model="value" placeholder="请选择裁剪框的形状" style="width: 100px;">
-              <el-option
-                v-for="item in shapes"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              ></el-option>
+              <el-option v-for="item in shapes"
+                :key="item.value" :label="item.label" :value="item.value"></el-option>
             </el-select>
             <el-row v-if="value == 'rect'">
               <el-button-group>
-                <!-- <el-button @click="removeMask()">取消</el-button> -->
                 <el-button @click="clipImage('1:1')">1:1</el-button>
                 <el-button @click="clipImage('3:2')">3:2</el-button>
                 <el-button @click="clipImage('4:3')">4:3</el-button>
                 <el-button @click="clipImage('16:9')">16:9</el-button>
-                <!-- <el-button @click="toClip()">应用</el-button> -->
               </el-button-group>&nbsp;&nbsp;
               框的宽度&nbsp;
-              <el-input-number class="inputStyle"
-                v-model="maskWidth"
-                :precision="0"
-                controls-position="right"
-                :min="1"
-                :max="imgWidth"></el-input-number>&nbsp;
+              <el-input-number class="inputStyle" v-model="maskWidth"
+                :precision="0" :controls="false" :min="1" :max="imgWidth"></el-input-number>&nbsp;
+              <el-button icon="el-icon-lock" type="primary" v-if="lockMaskScale==true" @click="lockMaskScale=false"></el-button>
+              <el-button icon="el-icon-unlock" type="primary" v-else @click="lockMaskScale=true"></el-button>
               框的高度&nbsp;
-              <el-input-number class="inputStyle"
-                v-model="maskHeight"
-                :precision="0"
-                controls-position="right"
-                :min="1"
-                :max="imgWidth"></el-input-number>
+              <el-input-number class="inputStyle" v-model="maskHeight" :precision="0"
+                :controls="false" :min="1" :max="imgWidth"></el-input-number>
             </el-row>
             <el-row v-else-if="value == 'circle'">
-              <!-- <el-button @click="removeMask()">取消</el-button>&nbsp;&nbsp; -->
               框的半径&nbsp;
-              <el-input-number :precision="0" v-model="maskRadius" controls-position="right"
+              <el-input-number :precision="0" v-model="maskRadius"  :controls="false"
                 :min="1" :max="canvasHeight/2"></el-input-number>&nbsp;&nbsp;
-              <!-- <el-button @click="toClip()">应用</el-button> -->
             </el-row>
           </el-row>
           <el-row>
@@ -119,7 +99,7 @@
               v-model="imgScaledWidth"
               class="inputStyle"
               :precision="0"
-              controls-position="right"
+               :controls="false"
               :min="1"
               :max="imgWidth"
             ></el-input-number>
@@ -128,10 +108,10 @@
             <el-button
               icon="el-icon-lock"
               type="primary"
-              v-if="lockScale==true"
-              @click="lockScale=false"
+              v-if="lockImageScale==true"
+              @click="lockImageScale=false"
             ></el-button>
-            <el-button icon="el-icon-unlock" type="primary" v-else @click="lockScale=true"></el-button>
+            <el-button icon="el-icon-unlock" type="primary" v-else @click="lockImageScale=true"></el-button>
           </el-col>
           <el-col :md="4">
             高&nbsp;&nbsp;
@@ -139,7 +119,7 @@
               v-model="imgScaledHeight"
               class="inputStyle"
               :precision="0"
-              controls-position="right"
+               :controls="false"
               :min="1"
               :max="imgWidth"
             ></el-input-number>
@@ -469,7 +449,8 @@ export default {
       ],
       drawer: false, // 右侧抽屉可见性
       jsonList: [], // 用json记录图片修改后的数据
-      currIndex: -1, // 记录当前图片的存在数组中的索引
+      curIndex: -1, // 记录当前图片存在数组中的索引
+      oldIndex: -1, // 记录图片更改前存在数组中的索引
       returnPrevious: true, // 上一步按钮禁用状态
       returnNext: true, // 下一步按钮禁用状态
       value: "rect", // 裁剪框的形状值,默认为矩形
@@ -483,13 +464,14 @@ export default {
       imgScaledWidth: 0,
       imgScaledHeight: 0,
       imgScale: 0,
-      lockScale: true,
-      modifySize: false, // 记录尺寸是否改变了
+      lockImageScale: true,
+      lockMaskScale: true,
       mask: new fabric.Rect(),
       maskWidth: 0,
       maskHeight: 0,
       maskRadius: 0,
-      // 编辑后的图片的属性
+      maskScale: 0,
+      // 编辑后新图片的属性
       newImgLeft: 0,
       newImgTop: 0,
       newImgWidth: 0,
@@ -498,7 +480,6 @@ export default {
       newImgScaleY: 0,
       state: "", // 记录正在进行的编辑模式
       mousewheeling: false, // 是否鼠标滚轮中标志
-      MISTAKE_NUM: 1, //边距容差
       MAX_SIZE: 2, // 放大倍数
       brightness: 0, // 图片亮度
       brightnessValue: 0, // 图片亮度修改后的值
@@ -567,31 +548,31 @@ export default {
     };
   },
   watch: {
-    imgScaledWidth: function() {
-      if (this.lockScale) {
-        this.imgScaledHeight = this.imgScaledWidth / this.imgScale;
-      }
-      // this.toResetSize();
-    },
-    imgScaledHeight: function() {
-      if (this.lockScale) {
-        this.imgScaledWidth = this.imgScaledHeight * this.imgScale;
-      }
-      // this.toResetSize();
-    },
     maskWidth: function() {
-      if (this.maskWidth > this.image.getScaledWidth())
-        this.maskWidth = this.image.getScaledWidth();
+      // if (this.maskWidth > this.image.getScaledWidth())
+      //   this.maskWidth = this.image.getScaledWidth();
+      if (this.maskWidth > this.canvasWidth)
+        this.maskWidth = this.canvasWidth;
       this.mask.set("width", this.maskWidth);
+      if (this.lockMaskScale) {
+        this.maskHeight = this.maskWidth / this.maskScale;
+        this.mask.set("height", this.maskHeight);
+      }
       this.mask.setCoords();
       this.mask.center();
       this.mask.setCoords();
       this.canvas.renderAll();
     },
     maskHeight: function() {
-      if (this.maskHeight > this.image.getScaledHeight())
-        this.maskHeight = this.image.getScaledHeight();
+      // if (this.maskHeight > this.image.getScaledHeight())
+      //   this.maskHeight = this.image.getScaledHeight();
+      if (this.maskHeight > this.canvasHeight)
+        this.maskHeight = this.canvasHeight;
       this.mask.set("height", this.maskHeight);
+      if (this.lockMaskScale){
+        this.maskWidth = this.maskHeight * this.maskScale;
+        this.mask.set("width", this.maskWidth);
+      }
       this.mask.setCoords();
       this.mask.center();
       this.mask.setCoords();
@@ -599,10 +580,15 @@ export default {
     },
     maskRadius: function() {
       var min;
-      if (this.image.getScaledWidth() > this.image.getScaledHeight()) {
-        min = this.image.getScaledHeight();
+      // if (this.image.getScaledWidth() > this.image.getScaledHeight()) {
+      //   min = this.image.getScaledHeight();
+      // } else {
+      //   min = this.image.getScaledWidth();
+      // }
+      if (this.canvasWidth > this.canvasHeight) {
+        min = this.canvasHeight;
       } else {
-        min = this.image.getScaledWidth();
+        min = this.canvasWidth;
       }
       if (this.maskRadius > min) this.maskRadius = min / 2;
       this.mask.set("radius", this.maskRadius);
@@ -630,13 +616,13 @@ export default {
       this.canvas.renderAll();
       this.addMask();
     },
-    currIndex: function() {
-      if (this.currIndex > 0) {
+    curIndex: function() {
+      if (this.curIndex > 0) {
         this.returnPrevious = false;
       } else {
         this.returnPrevious = true;
       }
-      if (this.currIndex < this.jsonList.length - 1) {
+      if (this.curIndex < this.jsonList.length - 1) {
         this.returnNext = false;
       } else {
         this.returnNext = true;
@@ -787,6 +773,7 @@ export default {
     // 裁剪相关方法
     addMask() {
       this.state = "clip";
+      this.oldIndex = this.curIndex;
       if (this.mask) {
         this.canvas.remove(this.mask);
       }
@@ -818,11 +805,19 @@ export default {
         // this.mask.height = this.newImgHeight;
         this.mask.width = this.image.getScaledWidth();
         this.mask.height = this.image.getScaledHeight();
-        this.mask.setCoords();
-        this.canvas.add(this.mask);
-        this.canvas.setActiveObject(this.image);
         this.maskWidth = this.mask.getScaledWidth();
         this.maskHeight = this.mask.getScaledHeight();
+        this.mask.setCoords();
+        this.mask.toObject = (function(toObject) {
+          return function() {
+            return fabric.util.object.extend(toObject.call(this), {
+              name: this.name
+            });
+          };
+        })(this.mask.toObject);
+        this.canvas.add(this.mask);
+        this.canvas.setActiveObject(this.image);
+        this.maskScale = this.imgScale;
       } else if (this.value == "circle") {
         var min;
         if (this.image.getScaledWidth() > this.image.getScaledHeight()) {
@@ -833,20 +828,25 @@ export default {
         this.mask = new fabric.Circle({
           radius: min / 2,
           fill: "rgba(255, 255, 255, 0)",
-          // left: this.image.left + this.image.getScaledWidth() / 2,
-          // top: this.image.top + this.image.getScaledHeight() / 2,
           left: this.image.left,
           top: this.image.top,
           stroke: "#F5A623",
-          strokeWidth: 5
-          // scaleX: this.image.scaleX,
-          // scaleY: this.image.scaleY,
-          // originX: "left",
-          // originY: "top",
+          strokeWidth: 5,
+          lockRotation: true,
+          hasControls: false,
+          lockMovementX: true,
+          lockMovementY: true,
         });
-        this.mask.setCoords();
-        this.mask.center();
-        this.mask.setCoords();
+        debugger
+        this.mask.toObject = (function(toObject) {
+          return function() {
+            return fabric.util.object.extend(toObject.call(this), {
+              name: this.name
+            });
+          };
+        })(this.mask.toObject);
+        this.maskRadius = this.mask.radius;
+        this.maskScale = 1;
         this.mask.setControlsVisibility({
           mt: false,
           mr: false,
@@ -854,12 +854,17 @@ export default {
           ml: false
         });
         this.canvas.add(this.mask);
+        this.mask.setCoords();
+        this.mask.center();
+        this.mask.setCoords();
         this.canvas.setActiveObject(this.image);
-        this.maskWidth = this.mask.getScaledWidth();
-        this.maskHeight = this.mask.getScaledHeight();
-        this.maskRadius = this.mask.radius;
+        this.canvas.renderAll();
       }
+      this.mask.name = "mask";
       this.canvas.renderAll();
+      
+      this.maskWidth = this.mask.getScaledWidth();
+      this.maskHeight = this.mask.getScaledHeight();
       this.state = "clip";
       this.scaleMask("on");
       this.mousewheelImage("on");
@@ -869,6 +874,38 @@ export default {
       this.canvas.remove(this.mask);
       this.mousewheelImage("off");
       this.scaleMask("off");
+      var self = this;
+      var currentObj = this.jsonList[this.oldIndex];
+      this.watermarkGroup.splice(0);
+      this.canvas.loadFromJSON(currentObj,this.canvas.renderAll.bind(this.canvas),
+        function(o, object) {
+          if (object.name) {
+            if (object.name == "watermark") {
+              self.watermarkGroup.push({
+                watermark: object,
+                btn: new fabric.Image()
+              });
+            } else if (object.name == "btn") {
+              var temp = self.watermarkGroup[self.watermarkGroup.length - 1];
+              temp.btn = object;
+              self.watermarkListener(temp.watermark, temp.btn);
+              self.clickBtn(temp.watermark, temp.btn);
+            } else if (object.name == "mask") {
+              self.mask = object;
+              self.maskWidth = self.mask.getScaledWidth();
+              self.maskHeight = self.mask.getScaledHeight();
+              self.maskRadius = self.mask.getRadiusX();
+              self.maskScale = self.maskWidth / self.maskHeight;
+            }
+          } else {
+            self.image = object;
+            self.scaleImage();
+            self.imgScaledWidth = self.image.getScaledWidth();
+            self.imgScaledHeight = self.image.getScaledHeight();
+          }
+        }
+      );
+      this.canvas.renderAll();
     },
     // 选择裁剪框尺寸
     clipImage(command) {
@@ -883,58 +920,62 @@ export default {
       if (command == "1:1") {
         this.mask.set("height", min / this.mask.scaleY);
         this.mask.set("width", min / this.mask.scaleX);
+        this.maskScale = 1;
       } else if (command == "3:2") {
-        if (this.imgScale > 3 / 2) {
+        this.maskScale = 3/2;
+        if (this.imgScale > this.maskScale) {
           if (this.imgScale > 1) {
             this.mask.set("height", min / this.mask.scaleY);
-            this.mask.set("width", ((3 / 2) * min) / this.mask.scaleX);
+            this.mask.set("width", (this.maskScale * min) / this.mask.scaleX);
           } else {
             this.mask.set("width", min / this.mask.scaleX);
-            this.mask.set("height", ((2 / 3) * min) / this.mask.scaleY);
+            this.mask.set("height", (min / this.maskScale) / this.mask.scaleY);
           }
         } else {
           if (this.imgScale >= 1) {
             this.mask.set("width", max / this.mask.scaleX);
-            this.mask.set("height", (2 / 3) * this.mask.width);
+            this.mask.set("height", this.mask.width / this.maskScale);
           } else {
             this.mask.set("height", max / this.mask.scaleY);
-            this.mask.set("width", (3 / 2) * this.mask.height);
+            this.mask.set("width", this.maskScale * this.mask.height);
           }
         }
       } else if (command == "4:3") {
-        if (this.imgScale > 4 / 3) {
+        this.maskScale = 4 / 3;
+        if (this.imgScale > this.maskScale) {
           if (this.imgScale > 1) {
             this.mask.set("height", min / this.mask.scaleY);
-            this.mask.set("width", ((4 / 3) * min) / this.mask.scaleX);
+            this.mask.set("width", (this.maskScale * min) / this.mask.scaleX);
           } else {
             this.mask.set("width", min / this.mask.scaleX);
-            this.mask.set("height", ((3 / 4) * min) / this.mask.scaleY);
+            this.mask.set("height", (min / this.maskScale) / this.mask.scaleY);
           }
         } else {
           if (this.imgScale >= 1) {
             this.mask.set("width", max / this.mask.scaleX);
-            this.mask.set("height", (3 / 4) * this.mask.width);
+            this.mask.set("height", this.mask.width / this.maskScale);
           } else {
             this.mask.set("height", max / this.mask.scaleY);
-            this.mask.set("width", (4 / 3) * this.mask.height);
+            this.mask.set("width", this.maskScale * this.mask.height);
           }
         }
       } else if (command == "16:9") {
-        if (this.imgScale > 16 / 9) {
+        this.maskScale = 16 / 9;
+        if (this.imgScale > this.maskScale) {
           if (this.imgScale > 1) {
             this.mask.set("height", min / this.mask.scaleY);
-            this.mask.set("width", ((16 / 9) * min) / this.mask.scaleX);
+            this.mask.set("width", (this.maskScale * min) / this.mask.scaleX);
           } else {
             this.mask.set("width", min / this.mask.scaleX);
-            this.mask.set("height", ((9 / 16) * min) / this.mask.scaleY);
+            this.mask.set("height", (min / this.maskScale) / this.mask.scaleY);
           }
         } else {
           if (this.imgScale >= 1) {
             this.mask.set("width", max / this.mask.scaleX);
-            this.mask.set("height", (9 / 16) * this.mask.width);
+            this.mask.set("height", this.mask.width / this.maskScale);
           } else {
             this.mask.set("height", max / this.mask.scaleY);
-            this.mask.set("width", (16 / 9) * this.mask.height);
+            this.mask.set("width", this.maskScale * this.mask.height);
           }
           this.mask.set("top", this.image.top);
           this.mask.set("left", this.image.left);
@@ -946,8 +987,10 @@ export default {
       this.canvas.renderAll();
       this.maskWidth = this.mask.getScaledWidth();
       this.maskHeight = this.mask.getScaledHeight();
+      console.log(this.maskScale);
     },
     toClip() {
+      this.state = "";
       this.mask.setCoords();
       this.image.setCoords();
       this.newImgLeft = this.mask.left;
@@ -1010,7 +1053,6 @@ export default {
       this.canvas.renderAll();
       this.mousewheelImage("off");
       this.scaleMask("off");
-      this.state = "";
     },
     // 监听裁剪框的缩放
     scaleMask(command) {
@@ -1035,6 +1077,7 @@ export default {
     // 监听图片的缩放
     mousewheelImage(command) {
       if (command == "on") {
+        var self = this;
         this.image.on({
           mousewheel: opt => {
             console.log("event mousewheel");
@@ -1074,20 +1117,17 @@ export default {
             this.image.setCoords();
             this.mask.setCoords();
             this.canvas.renderAll();
+            debugger
+            this.imgScaledWidth = this.image.getScaledWidth();
+            this.imgScaledHeight = this.image.getScaledHeight();
+            console.log(this.image.getScaledWidth() + "," + this.image.getScaledHeight());
+            console.log(this.imgScaledWidth + "," + this.imgScaledHeight);
             this.mousewheeling = false;
           }
         });
       } else if (command == "off") {
         this.image.off("mousewheel");
       }
-    },
-    scaleImage() {
-      this.image.on({
-        scaling: e => {
-          this.imgScaledWidth = this.image.getScaledWidth();
-          this.imgScaledHeight = this.image.getScaledHeight();
-        }
-      });
     },
     keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight) {
       if (!opt || !opt.pointer) return;
@@ -1106,96 +1146,125 @@ export default {
         left: newLeft - (newx - opt.pointer.x)
       });
       this.image.setCoords();
+    }, 
+    changeImgScaledWidth(){
+      debugger
+      if (this.lockImageScale && !this.mousewheeling) {
+        this.imgScaledHeight = this.imgScaledWidth / this.imgScale;
+      }
+    },
+    changeImgScaledHeight(){
+      debugger
+      if (this.lockImageScale && !this.mousewheeling) {
+        this.imgScaledWidth = this.imgScaledHeight * this.imgScale;
+      }
+    },
+    scaleImage() {
+      var self = this;
+      this.image.on({
+        scaling: e => {
+          self.lockImageScale = false;
+          self.imgScaledWidth = self.image.getScaledWidth();
+          self.imgScaledHeight = self.image.getScaledHeight();
+        },
+        scaled: e => {
+          debugger
+          self.imgScaledWidth = self.image.getScaledWidth();
+          self.imgScaledHeight = self.image.getScaledHeight();
+          console.log(self.imgScaledWidth + "," + self.imgScaledHeight);
+          console.log(this.imgScaledWidth + "," + this.imgScaledHeight);
+        }
+      });
+      
     },
 
     // 改变尺寸（缩放）相关方法
-    chooseResetSize() {
-      this.state = "resetSize";
-      this.imgScaledWidth = this.image.getScaledWidth();
-      this.imgScaledHeight = this.image.getScaledHeight();
-    },
-    refreshSize() {
-      this.state = "";
-    },
-    toResetSize() {
-      if (this.lockScale) {
-        if (this.imgScaledHeight <= this.canvas.height) {
-          if (this.imgScaledWidth > this.imgScaledHeight) {
-            this.image.scaleToHeight(this.imgScaledHeight);
-          } else {
-            this.image.scaleToWidth(this.imgScaledWidth);
-          }
-        } else {
-          this.imgWidth = this.imgScaledWidth;
-          this.imgHeight = this.imgScaledHeight;
-        }
-      } else {
-        if (this.imgScaledWidth > this.imgScaledHeight) {
-          this.image.set("scaleX", this.imgScaledWidth / this.image.width);
-          this.image.set("scaleY", this.imgScaledHeight / this.image.height);
-        } else {
-          this.image.set("scaleX", this.imgScaledWidth / this.image.width);
-          this.image.set("scaleY", this.imgScaledHeight / this.image.height);
-        }
-      }
-      this.newImgWidth = this.imgScaledWidth;
-      this.newImgHeight = this.imgScaledHeight;
-      this.newImgScaleX = 1;
-      this.newImgScaleY = 1;
-      this.modifySize = false;
-      var newImg = this.canvas.toDataURL({
-        format: "png",
-        multiplier: this.newImgWidth / this.image.getScaledWidth(),
-        top: this.image.top,
-        left: this.image.left,
-        width: this.newImgWidth,
-        height: this.newImgHeight
-      });
-      this.imgSrc_clip = newImg;
-      this.image.setCoords();
-      this.image.center();
-      this.canvas.renderAll();
-      this.imgScaledWidth = this.image.getScaledWidth();
-      this.imgScaledHeight = this.image.getScaledHeight();
-      this.newImgLeft = this.image.left;
-      this.newImgTop = this.image.top;
-      this.state = "";
-    },
+    // chooseResetSize() {
+    //   this.state = "resetSize";
+    //   this.imgScaledWidth = this.image.getScaledWidth();
+    //   this.imgScaledHeight = this.image.getScaledHeight();
+    // },
+    // refreshSize() {
+    //   this.state = "";
+    // },
+    // toResetSize() {
+    //   if (this.lockImageScale) {
+    //     if (this.imgScaledHeight <= this.canvas.height) {
+    //       if (this.imgScaledWidth > this.imgScaledHeight) {
+    //         this.image.scaleToHeight(this.imgScaledHeight);
+    //       } else {
+    //         this.image.scaleToWidth(this.imgScaledWidth);
+    //       }
+    //     } else {
+    //       this.imgWidth = this.imgScaledWidth;
+    //       this.imgHeight = this.imgScaledHeight;
+    //     }
+    //   } else {
+    //     if (this.imgScaledWidth > this.imgScaledHeight) {
+    //       this.image.set("scaleX", this.imgScaledWidth / this.image.width);
+    //       this.image.set("scaleY", this.imgScaledHeight / this.image.height);
+    //     } else {
+    //       this.image.set("scaleX", this.imgScaledWidth / this.image.width);
+    //       this.image.set("scaleY", this.imgScaledHeight / this.image.height);
+    //     }
+    //   }
+    //   this.newImgWidth = this.imgScaledWidth;
+    //   this.newImgHeight = this.imgScaledHeight;
+    //   this.newImgScaleX = 1;
+    //   this.newImgScaleY = 1;
+    //   var newImg = this.canvas.toDataURL({
+    //     format: "png",
+    //     multiplier: this.newImgWidth / this.image.getScaledWidth(),
+    //     top: this.image.top,
+    //     left: this.image.left,
+    //     width: this.newImgWidth,
+    //     height: this.newImgHeight
+    //   });
+    //   this.imgSrc_clip = newImg;
+    //   this.image.setCoords();
+    //   this.image.center();
+    //   this.canvas.renderAll();
+    //   this.imgScaledWidth = this.image.getScaledWidth();
+    //   this.imgScaledHeight = this.image.getScaledHeight();
+    //   this.newImgLeft = this.image.left;
+    //   this.newImgTop = this.image.top;
+    //   this.state = "";
+    // },
 
-    // 旋转相关方法
-    addRotateMask() {
-      this.state = "rotate";
-      this.mask = new fabric.Rect({
-        left: this.image.left,
-        top: this.image.top,
-        originX: "left",
-        originY: "top",
-        stroke: "#F5A623",
-        strokeWidth: 5,
-        cornerColor: "#F5A623",
-        fill: "rgba(255, 255, 255, 0)",
-        objectCaching: false,
-        padding: 0,
-        angle: this.image.angle,
-        // lockMovementX: true,
-        // lockMovementY: true,
-        lockRotation: true,
-        hasControls: false // 编辑框
-        // selectable: false
-      });
-      this.mask.width = this.image.getScaledWidth();
-      this.mask.height = this.image.getScaledHeight();
-      this.mask.setCoords();
-      this.mask.center();
-      this.canvas.add(this.mask);
-      this.canvas.setActiveObject(this.image);
-      this.maskWidth = this.mask.getScaledWidth();
-      this.maskHeight = this.mask.getScaledHeight();
-      this.newImgScaleX = 1;
-      this.newImgScaleY = 1;
-      this.canvas.renderAll();
-      this.mousewheelImage("on");
-    },
+    // // 旋转相关方法
+    // addRotateMask() {
+    //   this.state = "rotate";
+    //   this.mask = new fabric.Rect({
+    //     left: this.image.left,
+    //     top: this.image.top,
+    //     originX: "left",
+    //     originY: "top",
+    //     stroke: "#F5A623",
+    //     strokeWidth: 5,
+    //     cornerColor: "#F5A623",
+    //     fill: "rgba(255, 255, 255, 0)",
+    //     objectCaching: false,
+    //     padding: 0,
+    //     angle: this.image.angle,
+    //     // lockMovementX: true,
+    //     // lockMovementY: true,
+    //     lockRotation: true,
+    //     hasControls: false // 编辑框
+    //     // selectable: false
+    //   });
+    //   this.mask.width = this.image.getScaledWidth();
+    //   this.mask.height = this.image.getScaledHeight();
+    //   this.mask.setCoords();
+    //   this.mask.center();
+    //   this.canvas.add(this.mask);
+    //   this.canvas.setActiveObject(this.image);
+    //   this.maskWidth = this.mask.getScaledWidth();
+    //   this.maskHeight = this.mask.getScaledHeight();
+    //   this.newImgScaleX = 1;
+    //   this.newImgScaleY = 1;
+    //   this.canvas.renderAll();
+    //   this.mousewheelImage("on");
+    // },
     // 选择旋转方式
     changeAngle(command) {
       this.curImgAngle = this.image.angle;
@@ -1255,8 +1324,8 @@ export default {
           this.image.scaleToWidth(this.canvas.height);
           console.log("图片适应画布的高" + this.image.getScaledHeight());
         }
-        this.mask.set("width", this.image.getScaledHeight());
-        this.mask.set("height", this.image.getScaledWidth());
+        // this.mask.set("width", this.image.getScaledHeight());
+        // this.mask.set("height", this.image.getScaledWidth());
       } else {
         this.imgHeight = this.image.height;
         this.imgWidth = this.image.width;
@@ -1267,69 +1336,69 @@ export default {
           this.image.getScaledWidth() + "," + this.image.getScaledHeight()
         );
         this.refreshScale();
-        this.mask.set("width", this.image.getScaledWidth());
-        this.mask.set("height", this.image.getScaledHeight());
+        // this.mask.set("width", this.image.getScaledWidth());
+        // this.mask.set("height", this.image.getScaledHeight());
       }
       this.image.setCoords();
       this.image.center();
-      this.mask.center();
+      // this.mask.center();
       this.canvas.renderAll();
     },
     // 取消角度的变化
-    restoreAngle() {
-      this.state = "";
-      this.canvas.remove(this.mask);
-      this.mousewheelImage("off");
-      this.image.set("angle", this.imgAngle);
-      if (this.imgAngle % 90 == 0 && this.imgAngle != 180 &&
-        this.imgAngle != 0 && this.imgAngle != 360) {
-        this.imgHeight = this.image.width;
-        this.imgWidth = this.image.height;
-        if (this.imgWidth > this.canvas.width) {
-          this.image.scaleToWidth(this.canvas.width);
-          console.log("图片适应画布的宽" + this.image.getScaledWidth());
-        }
-        if (this.image.getScaledWidth() > this.canvas.height) {
-          this.image.scaleToHeight(this.canvas.height);
-          console.log("图片适应画布的高" + this.image.getScaledHeight());
-        }
-      } else {
-        this.imgHeight = this.image.height;
-        this.imgWidth = this.image.width;
-        // 重设图片的缩放比例
-        this.image.scaleToWidth(this.imgScaledWidth);
-        this.image.scaleToHeight(this.imgScaledHeight);
-        this.refreshScale();
-      }
-      this.image.setCoords();
-      this.image.center();
-      this.canvas.renderAll();
-    },
-    toRotate() {
-      this.newImgLeft = this.mask.left;
-      this.newImgTop = this.mask.top;
-      this.newImgWidth = this.mask.width;
-      this.newImgHeight = this.mask.height;
-      this.image.clipPath = new fabric.Rect({
-        left: this.newImgLeft,
-        top: this.newImgTop,
-        width: this.newImgWidth,
-        height: this.newImgHeight
-      });
-      this.canvas.remove(this.mask);
-      var src = this.canvas.toDataURL({
-        format: "png",
-        left: this.newImgLeft,
-        top: this.newImgTop,
-        width: this.newImgWidth,
-        height: this.newImgHeight
-      });
-      this.imgAngle = 0;
-      this.imgSrc_clip = src;
-      this.canvas.renderAll();
-      this.state = "";
-      this.mousewheelImage("off");
-    },
+    // restoreAngle() {
+    //   this.state = "";
+    //   this.canvas.remove(this.mask);
+    //   this.mousewheelImage("off");
+    //   this.image.set("angle", this.imgAngle);
+    //   if (this.imgAngle % 90 == 0 && this.imgAngle != 180 &&
+    //     this.imgAngle != 0 && this.imgAngle != 360) {
+    //     this.imgHeight = this.image.width;
+    //     this.imgWidth = this.image.height;
+    //     if (this.imgWidth > this.canvas.width) {
+    //       this.image.scaleToWidth(this.canvas.width);
+    //       console.log("图片适应画布的宽" + this.image.getScaledWidth());
+    //     }
+    //     if (this.image.getScaledWidth() > this.canvas.height) {
+    //       this.image.scaleToHeight(this.canvas.height);
+    //       console.log("图片适应画布的高" + this.image.getScaledHeight());
+    //     }
+    //   } else {
+    //     this.imgHeight = this.image.height;
+    //     this.imgWidth = this.image.width;
+    //     // 重设图片的缩放比例
+    //     this.image.scaleToWidth(this.imgScaledWidth);
+    //     this.image.scaleToHeight(this.imgScaledHeight);
+    //     this.refreshScale();
+    //   }
+    //   this.image.setCoords();
+    //   this.image.center();
+    //   this.canvas.renderAll();
+    // },
+    // toRotate() {
+    //   this.newImgLeft = this.mask.left;
+    //   this.newImgTop = this.mask.top;
+    //   this.newImgWidth = this.mask.width;
+    //   this.newImgHeight = this.mask.height;
+    //   this.image.clipPath = new fabric.Rect({
+    //     left: this.newImgLeft,
+    //     top: this.newImgTop,
+    //     width: this.newImgWidth,
+    //     height: this.newImgHeight
+    //   });
+    //   this.canvas.remove(this.mask);
+    //   var src = this.canvas.toDataURL({
+    //     format: "png",
+    //     left: this.newImgLeft,
+    //     top: this.newImgTop,
+    //     width: this.newImgWidth,
+    //     height: this.newImgHeight
+    //   });
+    //   this.imgAngle = 0;
+    //   this.imgSrc_clip = src;
+    //   this.canvas.renderAll();
+    //   this.state = "";
+    //   this.mousewheelImage("off");
+    // },
 
     // 图像滤镜相关方法
     applyFilter(index, filter) {
@@ -1697,7 +1766,7 @@ export default {
       this.gammaRed = this.gammaGreen = this.gammaBlue = this.sharpen = 1;
       this.gammaRedValue = this.gammaGreenValue = this.gammaBlueValue = this.sharpenValue = 1;
       this.jsonList.length = 0;
-      this.currIndex = -1;
+      this.curIndex = -1;
       console.log("保存图片");
       this.canvas.renderAll();
     },
@@ -1865,26 +1934,22 @@ export default {
     },
     // 回退
     saveJson() {    
-      if (this.currIndex == 0 && this.jsonList.length > 1) {
+      if (this.curIndex == 0 && this.jsonList.length > 1) {
         this.jsonList.splice(1);
       }
       this.jsonList.push(this.canvas.toJSON());
-      this.currIndex = this.jsonList.length - 1;
-      // this.brightness = this.contrast = this.saturation = this.blendAlpha = this.blur = 0;
-      // this.brightnessValue = this.contrastValue = this.saturationValue = this.blendAlphaValue = this.blurValue = 0;
-      // this.gammaRed = this.gammaGreen = this.gammaBlue = this.sharpen = 1;
-      // this.gammaRedValue = this.gammaGreenValue = this.gammaBlueValue = this.sharpenValue = 1;
+      this.curIndex = this.jsonList.length - 1;
     },
     returnBack(command) {
-      this.jsonList[this.currIndex] = this.canvas.toJSON();
+      this.jsonList[this.curIndex] = this.canvas.toJSON();
       console.log(this.jsonList);
       if (command == "previous") {
-        this.currIndex -= 1;
+        this.curIndex -= 1;
       } else if (command == "next") {
-        this.currIndex += 1;
+        this.curIndex += 1;
       }
       var self = this;
-      var currentObj = this.jsonList[this.currIndex];
+      var currentObj = this.jsonList[this.curIndex];
       this.watermarkGroup.splice(0);
       this.canvas.loadFromJSON(currentObj,this.canvas.renderAll.bind(this.canvas),
         function(o, object) {
@@ -1900,6 +1965,12 @@ export default {
               temp.btn = object;
               self.watermarkListener(temp.watermark, temp.btn);
               self.clickBtn(temp.watermark, temp.btn);
+            } else if (object.name == "mask") {
+              self.mask = object;
+              self.maskWidth = self.mask.getScaledWidth();
+              self.maskHeight = self.mask.getScaledHeight();
+              self.maskRadius = self.mask.getRadiusX();
+              self.maskScale = self.maskWidth / self.maskHeight;
             }
           } else {
             self.image = object;
@@ -1935,7 +2006,7 @@ export default {
 }
 
 .inputStyle {
-  width: 200px;
+  width: 120px;
 }
 
 .filterName {
