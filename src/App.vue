@@ -209,7 +209,7 @@
             </el-col>
           </el-row>
         </el-row>
-        <el-row v-else-if="state == 'watermark'" type="flex" justify="center">
+        <el-row v-if="state == 'watermark'" type="flex" justify="center">
           <el-col :md="2" class="filterName">水印透明度</el-col>
           <el-col :md="2">
             <el-slider class="filterSlider" v-model=" opacityValue"
@@ -423,10 +423,8 @@ export default {
       this.image.clipPath = new fabric.Rect({
         top: 0,
         left: 0,
-        // width: this.image.width,
-        // height: this.image.height,
-        width: this.canvas.width,
-        height: this.canvas.height,
+        width: this.canvasWidth,
+        height: this.canvasHeight,
         fill: "silver",
         stroke: "silver",
         strokeDashArray: [5, 5],
@@ -455,11 +453,15 @@ export default {
     },
     state: function() {
       if(this.state != "clip"){
-        this.canvas.remove(this.mask);
+        if(this.mask) this.canvas.remove(this.mask);
+        this.mousewheelImage("off");
+        this.scaleMask("off");
+      }else if(this.state == "clip"){
+        this.mousewheelImage("on");
+        this.scaleMask("on");
       }
     }
   },
-  computed: {},
   methods: {
     init() {
       var img = document.getElementById("img");
@@ -509,7 +511,7 @@ export default {
         };
       })(this.image.toObject);
       this.canvas.add(this.image);
-      this.name = "image";
+      this.image.name = "image";
       this.image.scaledWidth = this.image.getScaledWidth();
       this.image.scaledHeight = this.image.getScaledHeight();
       this.image.center();
@@ -608,9 +610,9 @@ export default {
         this.image.scaleToHeight(this.canvas.height);
         console.log("适应画布的高" + this.image.getScaledHeight());
       }
-      console.log("当前图片的宽：" + this.image.getScaledWidth() + " 高：" + this.image.getScaledHeight());
-      this.imgScaledWidth = this.image.getScaledWidth();
-      this.imgScaledHeight = this.image.getScaledHeight();
+      console.log("当前图片的宽：" + Math.round(this.image.getScaledWidth()) + " 高：" + Math.round(this.image.getScaledHeight()));
+      this.imgScaledWidth = Math.round(this.image.getScaledWidth());
+      this.imgScaledHeight = Math.round(this.image.getScaledHeight());
     },
 
     // 裁剪相关方法
@@ -618,11 +620,11 @@ export default {
       this.state = "clip";
       this.addMask();
       this.oldIndex = this.curIndex;
+      this.imgScaledWidth = this.image.scaledWidth;
+      this.imgScaledHeight = this.image.scaledHeight;
+      console.log("当前图片的宽高：" + this.imgScaledWidth + "," + this.imgScaledHeight);
     },
     addMask() {
-      this.jsonList[this.curIndex] = this.canvas.toJSON();
-      this.imgScaledWidth = this.image.getScaledWidth();
-      this.imgScaledHeight = this.image.getScaledHeight();
       if (this.mask) {
         this.canvas.remove(this.mask);
       }
@@ -717,21 +719,16 @@ export default {
       this.maskHeight = this.mask.getScaledHeight();
       this.newImgScaleX = 1;
       this.newImgScaleY = 1;
-      this.scaleMask("on");
-      this.mousewheelImage("on");
       this.saveJson();
     },
     cancelClip() {
       this.state = "";
       this.canvas.remove(this.mask);
       this.restoreAngle();
-      this.mousewheelImage("off");
-      this.scaleMask("off");
-      debugger
+      this.jsonList.splice(this.oldIndex);
       this.curIndex = this.oldIndex;
       this.returnBack("previous");
-      this.curIndex = this.oldIndex - 1;
-      this.jsonList.splice(this.oldIndex);
+      this.curIndex = this.oldIndex - 1;   
       this.oldIndex = 0;
     },
     // 选择裁剪框尺寸
@@ -882,8 +879,6 @@ export default {
       this.image.scaledHeight = this.maskHeight;
       this.image.scaledWidth = this.maskWidth;
       this.canvas.renderAll();
-      this.mousewheelImage("off");
-      this.scaleMask("off");
     },
     // 监听裁剪框的缩放
     scaleMask(command) {
@@ -909,6 +904,7 @@ export default {
     mousewheelImage(command) {
       if (command == "on") {
         var self = this;
+        console.log("mousewheel on");
         this.image.on({
           mousewheel: opt => {
             console.log("event mousewheel");
@@ -950,13 +946,12 @@ export default {
             this.canvas.renderAll();
             this.imgScaledWidth = this.image.getScaledWidth();
             this.imgScaledHeight = this.image.getScaledHeight();
-            console.log(this.image.getScaledWidth() + "," + this.image.getScaledHeight());
-            console.log(this.imgScaledWidth + "," + this.imgScaledHeight);
             this.mousewheeling = false;
           }
         });
       } else if (command == "off") {
         this.image.off("mousewheel");
+        console.log("mousewheel off");
       }
     },
     keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight) {
@@ -988,6 +983,7 @@ export default {
       }
     },
     scaleImage() {
+      console.log("listening image");
       var self = this;
       this.image.on({
         scaling: e => {
@@ -1160,7 +1156,6 @@ export default {
     restoreAngle() {
       this.state = "";
       this.canvas.remove(this.mask);
-      this.mousewheelImage("off");
       this.image.set("angle", this.imgAngle);
       if (this.imgAngle % 90 == 0 && this.imgAngle != 180 &&
         this.imgAngle != 0 && this.imgAngle != 360) {
@@ -1207,7 +1202,6 @@ export default {
     chooseFilters(){
       this.oldIndex = this.curIndex;
       this.state='filters';
-      this.jsonList[this.curIndex] = this.canvas.toJSON();
     },
     toApplyFilters(){
       this.applyFilter(0, new fabric.Image.filters.Brightness({
@@ -1539,19 +1533,18 @@ export default {
     },
     // 保存图片数据
     saveJson() {   
-      this.image.scaledWidth = this.image.getScaledWidth();
-      this.image.scaledHeight = this.image.getScaledHeight(); 
+      this.image.scaledWidth = Math.round(this.image.getScaledWidth());
+      this.image.scaledHeight = Math.round(this.image.getScaledHeight()); 
       console.log(this.image.scaledWidth + " " + this.image.scaledHeight);
       if (this.curIndex == 0 && this.jsonList.length > 1) {
         this.jsonList.splice(1);
       }
       this.jsonList.push(this.canvas.toJSON());
       this.curIndex = this.jsonList.length - 1;
+      console.log(this.jsonList);
     },
     // 回退
     returnBack(command) {
-      this.jsonList[this.curIndex] = this.canvas.toJSON();
-      console.log(this.jsonList);
       if (command == "previous") {
         this.curIndex -= 1;
       } else if (command == "next") {
@@ -1560,10 +1553,9 @@ export default {
       var self = this;
       var currentObj = this.jsonList[this.curIndex];
       this.watermarkGroup.splice(0);
-      // debugger
       this.canvas.loadFromJSON(currentObj,this.canvas.renderAll.bind(this.canvas),
         function(o, object) {   
-          // debugger 
+          debugger 
           if (object.name) {
             if (object.name == "watermark") {
               var watermark = object;
@@ -1598,10 +1590,10 @@ export default {
               self.mask = object;
               self.maskWidth = self.mask.getScaledWidth();
               self.maskHeight = self.mask.getScaledHeight();
+              self.scaleMask("on");
               self.maskScale = self.maskWidth / self.maskHeight;
             } else if(object.name == "image"){
               self.image = object;
-              self.scaleImage();
               self.image.toObject = (function(toObject) {
                 return function() {
                   return fabric.util.object.extend(toObject.call(this), {
@@ -1612,10 +1604,12 @@ export default {
                 };
               })(self.image.toObject);
               self.image.name = 'watermark';
-              self.image.ScaledWidth = self.image.getScaledWidth();
-              self.image.ScaledHeight = self.image.getScaledHeight();
-              self.imgScaledWidth = self.image.ScaledWidth;
-              self.imgScaledHeight = self.image.ScaledHeight;
+              self.image.scaledWidth = self.image.getScaledWidth();
+              self.image.scaledHeight = self.image.getScaledHeight();    
+              self.scaleImage();
+              self.mousewheelImage("on");
+              self.imgScaledWidth = self.image.scaledWidth;
+              self.imgScaledHeight = self.image.scaledHeight; 
               if(self.image.filters[0].brightness)
                 self.brightnessValue = self.image.filters[0].brightness;
               if(self.image.filters[1].contrast)
@@ -1643,9 +1637,6 @@ export default {
         } 
       );
       this.canvas.renderAll();
-      if(this.watermarkGroup.length == 0){
-        this.state = '';
-      }
     }
   },
   mounted() {
