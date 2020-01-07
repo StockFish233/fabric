@@ -11,8 +11,8 @@
               type="primary" :disabled="returnNext"
               @click="returnBack('next')"></el-button>
           </el-button-group>
-          <el-button-group>
-            <el-button type="primary" @click="addMask()">裁剪</el-button>
+          <el-button-group v-if="state == ''">
+            <el-button type="primary" @click="chooseClip()">裁剪</el-button>
             <!-- <el-button type="primary" @click="chooseResetSize()">尺寸</el-button>
             <el-button type="primary" @click="addRotateMask()">旋转</el-button> -->
             <el-button type="primary" @click="chooseFilters()">色彩</el-button>
@@ -25,12 +25,12 @@
             <el-button type="primary" @click="chooseBlur()">模糊</el-button> -->
             <el-button type="primary" @click="drawer = true">添加图片</el-button>
           </el-button-group>
-          <el-button type="primary" @click="save()">保存</el-button>
+          <el-button type="primary" @click="save()" v-if="state == ''">保存</el-button>
         </el-row>
         <el-row v-if="state == 'clip'">
           <el-row type="flex" justify="center">
             <el-col :md="1">
-              <el-button @click="removeMask()">取消</el-button>
+              <el-button @click="cancelClip()">取消</el-button>
             </el-col>
             <el-col :md="3">目前图片的宽&nbsp;&nbsp;
               <el-input-number v-model="imgScaledWidth" class="inputStyle" :precision="0" @change="changeImgScaledWidth()"
@@ -189,7 +189,7 @@
               <el-button @click="cancelFilters()">取消</el-button>
             </el-col>
             <el-col :md="1" class="filterName">模式</el-col>
-            <el-col :md="2">
+            <el-col :md="1">
               <el-select v-model="blendModeValue" @change="changeBlend('mode')">
                 <el-option v-for="item in blendModeList"
                   :key="item.value" :label="item.label" :value="item.value"></el-option>
@@ -197,7 +197,7 @@
             </el-col>
             <el-col :md="1" class="filterName">颜色</el-col>
             <el-col :md="1">
-              <el-color-picker v-model="blendColorValue" @change="changeBlend('color')"
+              <el-color-picker v-model="blendColorValue" @change="changeBlend('color') "
                 style="margin-right: 50px;"></el-color-picker>
             </el-col>
             <el-col :md="2">
@@ -209,192 +209,11 @@
             </el-col>
           </el-row>
         </el-row>
-        <el-row v-else-if="state == 'brightness'"
-          type="flex"
-          justify="center"
-          style="margin: 0 auto;margin-top:20px;">
-          <el-col :md="1">
-            <el-button @click="cancelBrightness()">取消</el-button>
-          </el-col>
-          <el-col :md="1" class="filterName">亮度</el-col>
-          <el-col :md="4">
-            <el-slider
-              class="filterSlider"
-              v-model="brightnessValue"
-              :min="-1"
-              :max="1"
-              :step="0.000001"
-              @input="changeBrightness()"
-            ></el-slider>
-          </el-col>
-          <el-col :md="1">
-            <el-button @click="saveBrightness()">应用</el-button>
-          </el-col>
-        </el-row>
-        <el-row v-else-if="state == 'contrast'"
-          type="flex"
-          justify="center"
-          style="margin: 0 auto;margin-top:20px;">
-          <el-col :md="1">
-            <el-button @click="cancelContrast()">取消</el-button>
-          </el-col>
-          <el-col :md="1" class="filterName">对比度</el-col>
-          <el-col :md="4">
-            <el-slider
-              class="filterSlider"
-              v-model="contrastValue"
-              :min="-1"
-              :max="1"
-              :step="0.000001"
-              @input="changeContrast()"
-            ></el-slider>
-          </el-col>
-          <el-col :md="1">
-            <el-button @click="saveContrast()">应用</el-button>
-          </el-col>
-        </el-row>
-        <el-row v-else-if="state == 'saturation'"
-          type="flex"
-          justify="center"
-          style="margin: 0 auto;margin-top:20px;">
-          <el-col :md="1">
-            <el-button @click="cancelSaturation()">取消</el-button>
-          </el-col>
-          <el-col :md="1" class="filterName">饱和度</el-col>
-          <el-col :md="4">
-            <el-slider
-              class="filterSlider"
-              v-model="saturationValue"
-              :min="-1"
-              :max="1"
-              :step="0.000001"
-              @input="changeSaturation()"
-            ></el-slider>
-          </el-col>
-          <el-col :md="1">
-            <el-button @click="saveSaturation()">应用</el-button>
-          </el-col>
-        </el-row>
-        <el-row v-else-if="state == 'blendColor'" type="flex" justify="center"
-          style="margin: 0 auto;margin-top:20px;">
-          <el-col :md="1">
-            <el-button @click="cancelBlendColor()">取消</el-button>
-          </el-col>
-          <el-col :md="1" style="margin-top:8px;">模式</el-col>
+        <el-row v-else-if="state == 'watermark'" type="flex" justify="center">
+          <el-col :md="2" class="filterName">水印透明度</el-col>
           <el-col :md="2">
-            <el-select v-model="blendModeValue" @change="changeBlend('mode')">
-              <el-option
-                v-for="item in blendModeList"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              ></el-option>
-            </el-select>
-          </el-col>
-          <el-col :md="1" style="margin-top:8px;">颜色</el-col>
-          <el-col :md="1">
-            <el-color-picker v-model="blendColorValue" @change="changeBlend('color')"></el-color-picker>
-          </el-col>
-          <el-col :md="4">
-            <el-slider
-              class="filterSlider"
-              v-model="blendAlphaValue"
-              :min="0"
-              :max="1"
-              :step="0.01"
-              @input="changeBlend('alpha')"
-            ></el-slider>
-          </el-col>
-          <el-col :md="1">
-            <el-button @click="saveBlendColor()">应用</el-button>
-          </el-col>
-        </el-row>
-        <el-row v-else-if="state == 'sharpen'"
-          type="flex"
-          justify="center"
-          style="margin: 0 auto;margin-top:20px;">
-          <el-col :md="1">
-            <el-button @click="cancelSharpen()">取消</el-button>
-          </el-col>
-          <el-col :md="1" class="filterName">锐化</el-col>
-          <el-col :md="4">
-            <el-slider
-              class="filterSlider"
-              v-model="sharpenValue"
-              :min="1"
-              :max="100"
-              :step="1"
-              @input="changeSharpen()"
-            ></el-slider>
-          </el-col>
-          <el-col :md="1">
-            <el-button @click="saveSharpen()">应用</el-button>
-          </el-col>
-        </el-row>
-        <el-row v-else-if="state == 'gamma'"
-          type="flex"
-          justify="center"
-          style="margin: 0 auto;margin-top:20px;">
-          <el-col :md="1">
-            <el-button @click="cancelGamma()">取消</el-button>
-          </el-col>
-          <el-col :md="1" class="filterName" style="margin-left:0px;">red</el-col>
-          <el-col :md="3">
-            <el-slider
-              class="filterSlider"
-              v-model="gammaRedValue"
-              :min="0.01"
-              :max="2.2"
-              :step="0.001"
-              @input="changeGamma('red')"
-            ></el-slider>
-          </el-col>
-          <el-col :md="1" class="filterName">green</el-col>
-          <el-col :md="3">
-            <el-slider
-              class="filterSlider"
-              v-model="gammaGreenValue"
-              :min="0.01"
-              :max="2.2"
-              :step="0.001"
-              @input="changeGamma('green')"
-            ></el-slider>
-          </el-col>
-          <el-col :md="1" class="filterName">blue</el-col>
-          <el-col :md="3">
-            <el-slider
-              class="filterSlider"
-              v-model="gammaBlueValue"
-              :min="0.01"
-              :max="2.2"
-              :step="0.001"
-              @input="changeGamma('blue')"
-            ></el-slider>
-          </el-col>
-          <el-col :md="1">
-            <el-button @click="saveGamma()" style="margin-left: 25px;">应用</el-button>
-          </el-col>
-        </el-row>
-        <el-row v-else-if="state == 'blur'"
-          type="flex"
-          justify="center"
-          style="margin: 0 auto;margin-top:20px;">
-          <el-col :md="1">
-            <el-button @click="cancelBlur()">取消</el-button>
-          </el-col>
-          <el-col :md="1" class="filterName">模糊度</el-col>
-          <el-col :md="4">
-            <el-slider
-              class="filterSlider"
-              v-model="blurValue"
-              :min="0"
-              :max="1"
-              :step="0.0001"
-              @input="changeBlur()"
-            ></el-slider>
-          </el-col>
-          <el-col :md="1">
-            <el-button @click="saveBlur()">应用</el-button>
+            <el-slider class="filterSlider" v-model=" opacityValue"
+              :min="0" :max="1" :step="0.001" @input="changeOpacity()" @change="saveJson()"></el-slider>
           </el-col>
         </el-row>
         <el-row type="flex" justify="center" style="margin-top: 20px;">
@@ -549,7 +368,8 @@ export default {
       gammaBlue: 1,
       gammaRedValue: 1,
       gammaGreenValue: 1,
-      gammaBlueValue: 1
+      gammaBlueValue: 1,
+      opacityValue: 0.5, // 水印不透明度
     };
   },
   watch: {
@@ -632,6 +452,11 @@ export default {
       } else {
         this.returnNext = true;
       }
+    },
+    state: function() {
+      if(this.state != "clip"){
+        this.canvas.remove(this.mask);
+      }
     }
   },
   computed: {},
@@ -677,12 +502,14 @@ export default {
       this.image.toObject = (function(toObject) {
         return function() {
           return fabric.util.object.extend(toObject.call(this), {
+            name: this.name,
             scaledWidth: this.scaledWidth,
             scaledHeight: this.scaledHeight,
           });
         };
       })(this.image.toObject);
       this.canvas.add(this.image);
+      this.name = "image";
       this.image.scaledWidth = this.image.getScaledWidth();
       this.image.scaledHeight = this.image.getScaledHeight();
       this.image.center();
@@ -707,92 +534,69 @@ export default {
       this.newImgHeight = this.image.getScaledHeight();
       this.canvas.hoverCursor =
         'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAARCAMAAADnhAzLAAABKVBMVEUAAAAUFRfDw8TIyMggICEdHh8UFRfT1NVqamtycnOFhoYzNDVPUFBWVlcjJCYmJycsLC0eHyAuLy8oKCknKCknKCkUFRclJiYoKCgiIyTOzs/a2tqoqKjIycnMzMzd3d2urq85OTsvMDKxsbLV1dZCQkS4uLlQUFA7PD6JiYnKystXV1iJiYp3d3ifn6C4uLgfICK/v78kJSezs7Ofn59XV1hyc3OamppjY2MhISJRUVFGRkYjJCQyMzRHR0clJicUFRdHR0gXGBolJiccHR4tLS0lJicVFhgoKCktLS0cHR4XGBr////5+fn19fXt7e3s7Ozq6uri4uL7+/vv7+/o6Ojn5+fc3Nzy8vLw8PDd3t7Z2dnV1dXR0dLOzs7f39/W1ta/v7+vr6+SVJ4mAAAATHRSTlMA6d3b0os79+no4+PWz827sK2om5R1bVczKPj28/Dv7u7u7u3s7Ovr6Obl5ePj4uHg3tva2dnY1NHKxL+9ubi4tK2joJqHfnxiRyMUikpN3AAAANxJREFUGNNNy+V2wkAYhOFpSPCixeru7u7eb7NJGsHt/i+CZGE5PD/fMwOplMlVMKEM3NpXH493P7IUrl8wTaH0kjIjU56ffftJ5aG8TJ/rzkOSdlVDeSs8DYflc7pMMiOhK+l4/R7CBS3GyNyiE3VevwG0rIacScJCtBHJ4jfKd961OVH+W307XgIya2xz7ygoTLfNdgrAX2qZmCcKd6zDV/gqx7PipXPX8g6+EAgnIsGo5lhecyOMYds2/JHh1pu9U4wU94lVTavRihUhrVRZze1026sYe54aATAA+Pwr8I4RqnUAAAAASUVORK5CYII=") 8 8, auto';
-      console.log("初始化图片");
-      this.applyFilter(5, new fabric.Image.filters.Brightness({
-          brightness: parseFloat(this.brightness)
-        })
-      );
-      this.applyFilter(6, new fabric.Image.filters.Contrast({
-          contrast: parseFloat(this.contrast)
-        })
-      );
-      this.applyFilter(7, new fabric.Image.filters.Saturation({
-          saturation: parseFloat(this.saturation)
-        })
-      );
-      this.applyFilter(12, new fabric.Image.filters.Convolute({
-          matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0]
-        })
-      );
-      this.applyFilter(11, new fabric.Image.filters.Blur({
-          value: parseFloat(this.blur)
-        })
-      );
-      this.applyFilter(17, new fabric.Image.filters.Gamma({
-          gamma: [this.gammaRed, this.gammaGreen, this.gammaBlue]
-        })
-      );
-      this.applyFilter(16, new fabric.Image.filters.BlendColor({
-          color: this.blendColor,
-          mode: this.blendMode,
-          alpha: this.blendAlpha
-        })
-      );
+      console.log("初始化图片");  
+      this.toApplyFilters();
+      this.blendColorValue = this.blendColor;
+      this.blendModeValue = this.blendMode;
+      this.blendAlphaValue = this.blendAlpha;
+      this.gammaRedValue = this.gammaRed;
+      this.gammaGreenValue = this.gammaGreen;
+      this.gammaBlueValue = this.gammaBlue;
+      this.blurValue = this.blur;
+      this.sharpenValue = this.sharpen;
+      this.saturationValue = this.saturation;
+      this.contrastValue = this.contrast;
+      this.brightnessValue = this.brightness;
       this.saveJson();
       this.scaleImage();
     },
     init_clip() {
+      var self = this;
       if (this.imgSrc_clip != "") {
-        this.image.setSrc(this.imgSrc_clip);
-        this.image.set({
-          left: this.newImgLeft,
-          top: this.newImgTop,
-          scaleX: this.newImgScaleX,
-          scaleY: this.newImgScaleY,
-          angle: this.imgAngle,
-          width: this.newImgWidth,
-          height: this.newImgHeight
-          // lockMovementX: true,
-          // lockMovementY: true,
-          // lockRotation: true,
-          // hasControls: false, // 编辑框
-          // selectable: false
+        this.image.setSrc(this.imgSrc_clip, function(img){
+          self.image.set({
+            left: self.newImgLeft,
+            top: self.newImgTop,
+            scaleX: self.newImgScaleX,
+            scaleY: self.newImgScaleY,
+            angle: self.imgAngle,
+            width: self.newImgWidth,
+            height: self.newImgHeight
+          });
+          self.canvas.renderAll();
+          self.image.clipPath = new fabric.Rect({
+            left: 0,
+            top: 0,
+            width: self.canvas.width,
+            height: self.canvas.height,
+            fill: "silver",
+            stroke: "silver",
+            strokeDashArray: [5, 5],
+            absolutePositioned: true,
+            lockMovementX: true,
+            lockMovementY: true,
+            hasRotatingPoint: false,
+            hasControls: true,
+            selectable: false
+          });
+          self.imgWidth = self.image.width;
+          self.imgHeight = self.image.height;
+          self.imgScale = self.image.width / self.image.height;
+          self.image.setCoords();
+          self.image.clipPath.setCoords();
+          self.image.center();
+          self.image.clipPath.center();
+          self.image.setCoords();
+          self.image.clipPath.setCoords();
+          console.log("重载图片");
+          self.canvas.renderAll();
+          self.scaleImage();
+          self.jsonList.splice(self.curIndex);
+          self.saveJson();
+          self.oldIndex = 0;
+          self.returnPrevious = false;
+          self.returnNext = true;
         });
-        this.image.clipPath = new fabric.Rect({
-          left: 0,
-          top: 0,
-          width: this.canvas.width,
-          height: this.canvas.height,
-          fill: "silver",
-          stroke: "silver",
-          strokeDashArray: [5, 5],
-          absolutePositioned: true,
-          lockMovementX: true,
-          lockMovementY: true,
-          hasRotatingPoint: false,
-          hasControls: true,
-          selectable: false
-        });
-        this.imgWidth = this.image.width;
-        this.imgHeight = this.image.height;
-        this.imgScale = this.image.width / this.image.height;
-        this.image.setCoords();
-        this.image.clipPath.setCoords();
-        this.image.center();
-        this.image.clipPath.center();
-        this.image.setCoords();
-        this.image.clipPath.setCoords();
-        this.imgScaledWidth = this.image.getScaledWidth();
-        this.imgScaledHeight = this.image.getScaledHeight();
-        console.log("重载图片");
-        this.canvas.renderAll();
-        this.scaleImage();
-        this.saveJson();
-        this.curIndex = this.oldIndex;
-        this.jsonList.splice(this.curIndex + 1);
-        this.oldIndex = -1;
-        this.returnPrevious = false;
-        this.returnNext = true;
       }
     },
     refreshScale() {
@@ -804,14 +608,18 @@ export default {
         this.image.scaleToHeight(this.canvas.height);
         console.log("适应画布的高" + this.image.getScaledHeight());
       }
-      console.log("当前图片的高：" + this.image.getScaledHeight());
+      console.log("当前图片的宽：" + this.image.getScaledWidth() + " 高：" + this.image.getScaledHeight());
       this.imgScaledWidth = this.image.getScaledWidth();
       this.imgScaledHeight = this.image.getScaledHeight();
     },
 
     // 裁剪相关方法
-    addMask() {
+    chooseClip(){
       this.state = "clip";
+      this.addMask();
+      this.oldIndex = this.curIndex;
+    },
+    addMask() {
       this.jsonList[this.curIndex] = this.canvas.toJSON();
       this.imgScaledWidth = this.image.getScaledWidth();
       this.imgScaledHeight = this.image.getScaledHeight();
@@ -909,23 +717,22 @@ export default {
       this.maskHeight = this.mask.getScaledHeight();
       this.newImgScaleX = 1;
       this.newImgScaleY = 1;
-      this.state = "clip";
       this.scaleMask("on");
       this.mousewheelImage("on");
       this.saveJson();
-      this.oldIndex = this.curIndex;
     },
-    removeMask() {
+    cancelClip() {
       this.state = "";
       this.canvas.remove(this.mask);
       this.restoreAngle();
       this.mousewheelImage("off");
       this.scaleMask("off");
-      var self = this;
-      this.curIndex = this.oldIndex - 1;
+      debugger
+      this.curIndex = this.oldIndex;
       this.returnBack("previous");
       this.curIndex = this.oldIndex - 1;
-      this.jsonList.splice(this.curIndex + 1);
+      this.jsonList.splice(this.oldIndex);
+      this.oldIndex = 0;
     },
     // 选择裁剪框尺寸
     clipImage(command) {
@@ -1072,6 +879,8 @@ export default {
       this.imgAngle = 0;
       this.imgSrc_clip = img;
       this.curIndex = this.oldIndex;
+      this.image.scaledHeight = this.maskHeight;
+      this.image.scaledWidth = this.maskWidth;
       this.canvas.renderAll();
       this.mousewheelImage("off");
       this.scaleMask("off");
@@ -1169,13 +978,11 @@ export default {
       this.image.setCoords();
     }, 
     changeImgScaledWidth(){
-      debugger
       if (this.lockImageScale && !this.mousewheeling) {
         this.imgScaledHeight = this.imgScaledWidth / this.imgScale;
       }
     },
     changeImgScaledHeight(){
-      debugger
       if (this.lockImageScale && !this.mousewheeling) {
         this.imgScaledWidth = this.imgScaledHeight * this.imgScale;
       }
@@ -1222,97 +1029,54 @@ export default {
           }
           self.scaling = false;
         }
-      });
-      
+      });      
     },
 
     // 改变尺寸（缩放）相关方法
-    // chooseResetSize() {
-    //   this.state = "resetSize";
-    //   this.imgScaledWidth = this.image.getScaledWidth();
-    //   this.imgScaledHeight = this.image.getScaledHeight();
-    // },
-    // refreshSize() {
-    //   this.state = "";
-    // },
-    // toResetSize() {
-    //   if (this.lockImageScale) {
-    //     if (this.imgScaledHeight <= this.canvas.height) {
-    //       if (this.imgScaledWidth > this.imgScaledHeight) {
-    //         this.image.scaleToHeight(this.imgScaledHeight);
-    //       } else {
-    //         this.image.scaleToWidth(this.imgScaledWidth);
-    //       }
-    //     } else {
-    //       this.imgWidth = this.imgScaledWidth;
-    //       this.imgHeight = this.imgScaledHeight;
-    //     }
-    //   } else {
-    //     if (this.imgScaledWidth > this.imgScaledHeight) {
-    //       this.image.set("scaleX", this.imgScaledWidth / this.image.width);
-    //       this.image.set("scaleY", this.imgScaledHeight / this.image.height);
-    //     } else {
-    //       this.image.set("scaleX", this.imgScaledWidth / this.image.width);
-    //       this.image.set("scaleY", this.imgScaledHeight / this.image.height);
-    //     }
-    //   }
-    //   this.newImgWidth = this.imgScaledWidth;
-    //   this.newImgHeight = this.imgScaledHeight;
-    //   this.newImgScaleX = 1;
-    //   this.newImgScaleY = 1;
-    //   var newImg = this.canvas.toDataURL({
-    //     format: "png",
-    //     multiplier: this.newImgWidth / this.image.getScaledWidth(),
-    //     top: this.image.top,
-    //     left: this.image.left,
-    //     width: this.newImgWidth,
-    //     height: this.newImgHeight
-    //   });
-    //   this.imgSrc_clip = newImg;
-    //   this.image.setCoords();
-    //   this.image.center();
-    //   this.canvas.renderAll();
-    //   this.imgScaledWidth = this.image.getScaledWidth();
-    //   this.imgScaledHeight = this.image.getScaledHeight();
-    //   this.newImgLeft = this.image.left;
-    //   this.newImgTop = this.image.top;
-    //   this.state = "";
-    // },
+    toResetSize() {
+      if (this.lockImageScale) {
+        if (this.imgScaledHeight <= this.canvas.height) {
+          if (this.imgScaledWidth > this.imgScaledHeight) {
+            this.image.scaleToHeight(this.imgScaledHeight);
+          } else {
+            this.image.scaleToWidth(this.imgScaledWidth);
+          }
+        } else {
+          this.imgWidth = this.imgScaledWidth;
+          this.imgHeight = this.imgScaledHeight;
+        }
+      } else {
+        if (this.imgScaledWidth > this.imgScaledHeight) {
+          this.image.set("scaleX", this.imgScaledWidth / this.image.width);
+          this.image.set("scaleY", this.imgScaledHeight / this.image.height);
+        } else {
+          this.image.set("scaleX", this.imgScaledWidth / this.image.width);
+          this.image.set("scaleY", this.imgScaledHeight / this.image.height);
+        }
+      }
+      this.newImgWidth = this.imgScaledWidth;
+      this.newImgHeight = this.imgScaledHeight;
+      this.newImgScaleX = 1;
+      this.newImgScaleY = 1;
+      var newImg = this.canvas.toDataURL({
+        format: "png",
+        multiplier: this.newImgWidth / this.image.getScaledWidth(),
+        top: this.image.top,
+        left: this.image.left,
+        width: this.newImgWidth,
+        height: this.newImgHeight
+      });
+      this.imgSrc_clip = newImg;
+      this.image.setCoords();
+      this.image.center();
+      this.canvas.renderAll();
+      this.imgScaledWidth = this.image.getScaledWidth();
+      this.imgScaledHeight = this.image.getScaledHeight();
+      this.newImgLeft = this.image.left;
+      this.newImgTop = this.image.top;
+      this.state = "";
+    },
 
-    // // 旋转相关方法
-    // addRotateMask() {
-    //   this.state = "rotate";
-    //   this.mask = new fabric.Rect({
-    //     left: this.image.left,
-    //     top: this.image.top,
-    //     originX: "left",
-    //     originY: "top",
-    //     stroke: "#F5A623",
-    //     strokeWidth: 5,
-    //     cornerColor: "#F5A623",
-    //     fill: "rgba(255, 255, 255, 0)",
-    //     objectCaching: false,
-    //     padding: 0,
-    //     angle: this.image.angle,
-    //     // lockMovementX: true,
-    //     // lockMovementY: true,
-    //     lockRotation: true,
-    //     hasControls: false // 编辑框
-    //     // selectable: false
-    //   });
-    //   this.mask.width = this.image.getScaledWidth();
-    //   this.mask.height = this.image.getScaledHeight();
-    //   this.mask.setCoords();
-    //   this.mask.center();
-    //   this.canvas.add(this.mask);
-    //   this.canvas.setActiveObject(this.image);
-    //   this.maskWidth = this.mask.getScaledWidth();
-    //   this.maskHeight = this.mask.getScaledHeight();
-    //   this.newImgScaleX = 1;
-    //   this.newImgScaleY = 1;
-    //   this.canvas.renderAll();
-    //   this.mousewheelImage("on");
-    // },
     // 选择旋转方式
     changeAngle(command) {
       this.curImgAngle = this.image.angle;
@@ -1422,31 +1186,6 @@ export default {
       this.image.center();
       this.canvas.renderAll();
     },
-    // toRotate() {
-    //   this.newImgLeft = this.mask.left;
-    //   this.newImgTop = this.mask.top;
-    //   this.newImgWidth = this.mask.width;
-    //   this.newImgHeight = this.mask.height;
-    //   this.image.clipPath = new fabric.Rect({
-    //     left: this.newImgLeft,
-    //     top: this.newImgTop,
-    //     width: this.newImgWidth,
-    //     height: this.newImgHeight
-    //   });
-    //   this.canvas.remove(this.mask);
-    //   var src = this.canvas.toDataURL({
-    //     format: "png",
-    //     left: this.newImgLeft,
-    //     top: this.newImgTop,
-    //     width: this.newImgWidth,
-    //     height: this.newImgHeight
-    //   });
-    //   this.imgAngle = 0;
-    //   this.imgSrc_clip = src;
-    //   this.canvas.renderAll();
-    //   this.state = "";
-    //   this.mousewheelImage("off");
-    // },
 
     // 图像滤镜相关方法
     applyFilter(index, filter) {
@@ -1459,6 +1198,7 @@ export default {
     },
     applyFilterValue(index, prop, value) {
       if (this.image.filters[index]) {
+        console.log("change");
         this.image.filters[index][prop] = value;
         this.image.applyFilters();
         this.canvas.renderAll();
@@ -1467,78 +1207,47 @@ export default {
     chooseFilters(){
       this.oldIndex = this.curIndex;
       this.state='filters';
-      // this.applyFilter(5, new fabric.Image.filters.Brightness({
-      //     brightness: parseFloat(this.brightness)
-      //   })
-      // );
-      // this.applyFilter(6, new fabric.Image.filters.Contrast({
-      //     contrast: parseFloat(this.contrast)
-      //   })
-      // );
-      // this.applyFilter(7, new fabric.Image.filters.Saturation({
-      //     saturation: parseFloat(this.saturation)
-      //   })
-      // );
-      // this.applyFilter(12, new fabric.Image.filters.Convolute({
-      //     matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0]
-      //   })
-      // );
-      // this.applyFilter(11, new fabric.Image.filters.Blur({
-      //     value: parseFloat(this.blur)
-      //   })
-      // );
-      // this.applyFilter(17, new fabric.Image.filters.Gamma({
-      //     gamma: [this.gammaRed, this.gammaGreen, this.gammaBlue]
-      //   })
-      // );
-      // this.applyFilter(16, new fabric.Image.filters.BlendColor({
-      //     color: this.blendColor,
-      //     mode: this.blendMode,
-      //     alpha: this.blendAlpha
-      //   })
-      // );
-      this.blendColorValue = this.blendColor;
-      this.blendModeValue = this.blendMode;
-      this.blendAlphaValue = this.blendAlpha;
-      this.gammaRedValue = this.gammaRed;
-      this.gammaGreenValue = this.gammaGreen;
-      this.gammaBlueValue = this.gammaBlue;
-      this.blurValue = this.blur;
-      this.sharpenValue = this.sharpen;
-      this.saturationValue = this.saturation;
-      this.contrastValue = this.contrast;
-      this.brightnessValue = this.brightness;
+      this.jsonList[this.curIndex] = this.canvas.toJSON();
+    },
+    toApplyFilters(){
+      this.applyFilter(0, new fabric.Image.filters.Brightness({
+          brightness: parseFloat(this.brightness)
+        })
+      );
+      this.applyFilter(1, new fabric.Image.filters.Contrast({
+          contrast: parseFloat(this.contrast)
+        })
+      );
+      this.applyFilter(2, new fabric.Image.filters.Saturation({
+          saturation: parseFloat(this.saturation)
+        })
+      );
+      this.applyFilter(3, new fabric.Image.filters.Blur({
+          value: parseFloat(this.blur)
+        })
+      );
+      this.applyFilter(4, new fabric.Image.filters.Gamma({
+          gamma: [this.gammaRed, this.gammaGreen, this.gammaBlue]
+        })
+      );
+      this.applyFilter(5, new fabric.Image.filters.Convolute({
+          matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0]
+        })
+      );
+      this.applyFilter(6, new fabric.Image.filters.BlendColor({
+          color: this.blendColor,
+          mode: this.blendMode,
+          alpha: this.blendAlpha
+        })
+      );
     },
     cancelFilters(){
       this.state = "";
-      // this.applyFilterValue(5, "brightness", parseFloat(this.brightness));
-      // this.applyFilterValue(6, "contrast", parseFloat(this.contrast));
-      // this.applyFilterValue(7, "saturation", parseFloat(this.saturation));
-      // var a = -(this.sharpen - 1) / 4;
-      // this.applyFilterValue(12, "matrix", [
-      //   0,
-      //   a,
-      //   0,
-      //   a,
-      //   this.sharpen,
-      //   a,
-      //   0,
-      //   a,
-      //   0
-      // ]);
-      // this.applyFilterValue(11, "blur", parseFloat(this.blur));
-      // this.applyFilterValue(17, "gamma", [
-      //   parseFloat(this.gammaRed),
-      //   parseFloat(this.gammaGreen),
-      //   parseFloat(this.gammaBlue)
-      // ]);
-      // this.applyFilterValue(16, "color", this.blendColor);
-      // this.applyFilterValue(16, "mode", this.blendMode);
-      // this.applyFilterValue(16, "alpha", this.blendAlpha);
       this.curIndex = this.oldIndex + 1;
       this.returnBack("previous");
       this.curIndex = this.oldIndex;
       this.jsonList.splice(this.curIndex + 1);
+      this.oldIndex = 0;
     },
     saveFilters(){
       this.state = "";
@@ -1554,130 +1263,35 @@ export default {
       this.blendMode = this.blendModeValue;
       this.blendAlpha = this.blendAlphaValue;
       this.curIndex = this.oldIndex;
-      this.saveJson();
       this.jsonList.splice(this.curIndex + 1);
+      this.saveJson();
+      this.oldIndex = 0;
     },
     // 亮度
-    chooseBrightness() {
-      this.state = "brightness";
-      this.applyFilter(
-        5,
-        new fabric.Image.filters.Brightness({
-          brightness: parseFloat(this.brightness)
-        })
-      );
-      this.brightnessValue = this.brightness;
-    },
     changeBrightness() {
-      this.applyFilterValue(5, "brightness", parseFloat(this.brightnessValue));
-    },
-    cancelBrightness() {
-      this.state = "";
-      this.applyFilterValue(5, "brightness", parseFloat(this.brightness));
-    },
-    saveBrightness() {
-      this.state = "";
-      this.brightness = this.brightnessValue;
-      this.saveJson();
+      this.applyFilterValue(0, "brightness", parseFloat(this.brightnessValue));
     },
     // 对比度
-    chooseContrast() {
-      this.state = "contrast";
-      this.applyFilter(
-        6,
-        new fabric.Image.filters.Contrast({
-          contrast: parseFloat(this.contrast)
-        })
-      );
-      this.contrastValue = this.contrast;
-    },
     changeContrast() {
-      this.applyFilterValue(6, "contrast", parseFloat(this.contrastValue));
-    },
-    cancelContrast() {
-      this.state = "";
-      this.applyFilterValue(6, "contrast", parseFloat(this.contrast));
-    },
-    saveContrast() {
-      this.state = "";
-      this.contrast = this.contrastValue;
-      this.saveJson();
+      this.applyFilterValue(1, "contrast", parseFloat(this.contrastValue));
     },
     // 饱和度
-    chooseSaturation() {
-      this.state = "saturation";
-      this.applyFilter(
-        7,
-        new fabric.Image.filters.Saturation({
-          saturation: parseFloat(this.saturation)
-        })
-      );
-      this.saturationValue = this.saturation;
-    },
     changeSaturation() {
-      this.applyFilterValue(7, "saturation", parseFloat(this.saturationValue));
-    },
-    cancelSaturation() {
-      this.state = "";
-      this.applyFilterValue(7, "saturation", parseFloat(this.saturation));
-    },
-    saveSaturation() {
-      this.state = "";
-      this.saturation = this.saturationValue;
-      this.saveJson();
+      this.applyFilterValue(2, "saturation", parseFloat(this.saturationValue));
     },
     // 混合颜色
-    chooseBlendColor() {
-      this.state = "blendColor";
-      this.applyFilter(
-        16,
-        new fabric.Image.filters.BlendColor({
-          color: this.blendColor,
-          mode: this.blendMode,
-          alpha: this.blendAlpha
-        })
-      );
-      this.blendColorValue = this.blendColor;
-      this.blendModeValue = this.blendMode;
-      this.blendAlphaValue = this.blendAlpha;
-    },
     changeBlend(prop) {
       if (prop == "color")
-        this.applyFilterValue(16, "color", this.blendColorValue);
+        this.applyFilterValue(6, "color", this.blendColorValue);
       else if (prop == "mode")
-        this.applyFilterValue(16, "mode", this.blendModeValue);
+        this.applyFilterValue(6, "mode", this.blendModeValue);
       else if (prop == "alpha")
-        this.applyFilterValue(16, "alpha", parseFloat(this.blendAlphaValue));
-      // this.saveJson();
-    },
-    cancelBlendColor() {
-      this.state = "";
-      this.applyFilterValue(16, "color", this.blendColor);
-      this.applyFilterValue(16, "mode", this.blendMode);
-      this.applyFilterValue(16, "alpha", this.blendAlpha);
-    },
-    saveBlendColor() {
-      this.state = "";
-      this.blendColor = this.blendColorValue;
-      this.blendMode = this.blendModeValue;
-      this.blendAlpha = this.blendAlphaValue;
-      this.saveJson();
+        this.applyFilterValue(6, "alpha", parseFloat(this.blendAlphaValue));
     },
     // 锐化
-    chooseSharpen() {
-      this.state = "sharpen";
-      this.applyFilter(
-        12,
-        new fabric.Image.filters.Convolute({
-          // matrix: [ 0, -1,  0, -1,  5, -1, 0, -1,  0 ]
-          matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0]
-        })
-      );
-      this.sharpenValue = this.sharpen;
-    },
     changeSharpen() {
       var a = -(this.sharpenValue - 1) / 4;
-      this.applyFilterValue(12, "matrix", [
+      this.applyFilterValue(5, "matrix", [
         0,
         a,
         0,
@@ -1702,92 +1316,18 @@ export default {
           ", 0 ]"
       );
     },
-    cancelSharpen() {
-      this.state = "";
-      var a = -(this.sharpen - 1) / 4;
-      this.applyFilterValue(12, "matrix", [
-        0,
-        a,
-        0,
-        a,
-        this.sharpen,
-        a,
-        0,
-        a,
-        0
-      ]);
-    },
-    saveSharpen() {
-      this.state = "";
-      this.sharpen = this.sharpenValue;
-      this.saveJson();
-    },
     // 伽马
-    chooseGamma() {
-      this.state = "gamma";
-      this.applyFilter(
-        17,
-        new fabric.Image.filters.Gamma({
-          gamma: [this.gammaRed, this.gammaGreen, this.gammaBlue]
-        })
-      );
-      this.gammaRedValue = this.gammaRed;
-      this.gammaGreenValue = this.gammaGreen;
-      this.gammaBlueValue = this.gammaBlue;
-    },
     changeGamma(color) {
-      // var current = this.getFilter(17).gamma;
-      // if (color == "red") {
-      //   current[0] = parseFloat(this.gammaRedValue);
-      // } else if (color == "green") {
-      //   current[1] = parseFloat(this.gammaGreenValue);
-      // } else if (color == "blue") {
-      //   current[2] = parseFloat(this.gammaBlueValue);
-      // }
-      // this.applyFilterValue(17, "gamma", current);
-      this.applyFilterValue(17, "gamma", [this.gammaRedValue, this.gammaGreenValue, this.gammaBlueValue]);
-    },
-    cancelGamma() {
-      this.state = "";
-      this.applyFilterValue(17, "gamma", [
-        parseFloat(this.gammaRed),
-        parseFloat(this.gammaGreen),
-        parseFloat(this.gammaBlue)
-      ]);
-    },
-    saveGamma() {
-      this.state = "";
-      this.gammaRed = this.gammaRedValue;
-      this.gammaGreen = this.gammaGreenValue;
-      this.gammaBlue = this.gammaBlueValue;
-      this.saveJson();
+      this.applyFilterValue(4, "gamma", [this.gammaRedValue, this.gammaGreenValue, this.gammaBlueValue]);
     },
     // 模糊
-    chooseBlur() {
-      this.state = "blur";
-      this.applyFilter(
-        11,
-        new fabric.Image.filters.Blur({
-          value: parseFloat(this.blur)
-        })
-      );
-      this.blurValue = this.blur;
-    },
     changeBlur() {
-      this.applyFilterValue(11, "blur", parseFloat(this.blurValue));
-    },
-    cancelBlur() {
-      this.state = "";
-      this.applyFilterValue(11, "blur", parseFloat(this.blur));
-    },
-    saveBlur() {
-      this.state = "";
-      this.blur = this.blurValue;
-      this.saveJson();
+      this.applyFilterValue(3, "blur", parseFloat(this.blurValue));
     },
 
     // 保存图片
     save() {
+      this.state = "";
       this.image.clipPath.set({
         top: this.image.top,
         left: this.image.left,
@@ -1890,6 +1430,11 @@ export default {
       this.watermarkListener(watermark, btn);
       this.saveJson();
     },
+    changeOpacity(){
+      var object = this.canvas.getActiveObject();
+      object.set('opacity', this.opacityValue);
+      this.canvas.renderAll();
+    },
     // 监听水印的鼠标事件
     watermarkListener(watermark, btn) {
       watermark.on({
@@ -1897,16 +1442,17 @@ export default {
           btn.set("top", watermark.top + 10);
           btn.set("left", watermark.left + watermark.getScaledWidth() - 30);
           btn.setCoords();
-          this.canvas.renderAll();
+          this.canvas.renderAll();  
+        },
+        scaled: e => {
+          // this.saveJson();
         },
         mousedown: e => {
+          this.state = "watermark";
+          this.opacityValue = watermark.opacity;
           if (
-            !(
-              watermark.left + watermark.getScaledWidth() - 30 < e.pointer.x &&
-              e.pointer.x < watermark.left + watermark.getScaledWidth() - 10 &&
-              watermark.top + 10 < e.pointer.y &&
-              e.pointer.y < watermark.top + 30
-            )
+            !(btn.left <= e.pointer.x && e.pointer.x <= btn.left + btn.width &&
+              btn.top <= e.pointer.y && e.pointer.y <= btn.top + btn.height)
           ) {
             for (var i = 0; i < this.watermarkGroup.length; i++) {
               this.watermarkGroup[i].btn.set("visible", false);
@@ -1919,18 +1465,18 @@ export default {
               }
             }
             this.canvas.remove(watermark, btn);
+            this.saveJson();
+            if(this.watermarkGroup.length == 0){
+              this.state = '';
+            }
           }
           this.canvas.renderAll();
         },
         mouseup: e => {
-          if (
-            !(
-              watermark.left + watermark.getScaledWidth() - 30 < e.pointer.x &&
-              e.pointer.x < watermark.left + watermark.getScaledWidth() - 10 &&
-              watermark.top + 10 < e.pointer.y &&
-              e.pointer.y < watermark.top + 30
-            )
-          ) {
+          this.opacityValue = watermark.opacity;
+          if (!(watermark.left + watermark.getScaledWidth() - 30 < e.pointer.x &&
+            e.pointer.x < watermark.left + watermark.getScaledWidth() - 10 &&
+            watermark.top + 10 < e.pointer.y && e.pointer.y < watermark.top + 30)) {
             var pointer = watermark.aCoords.tr;
             if(watermark.angle <= 30 && watermark.angle >= 0){
               btn.set("top", pointer.y + 10);
@@ -1967,6 +1513,7 @@ export default {
             btn.set("visible", true);
             btn.setCoords();
             this.canvas.renderAll();
+            this.saveJson();
           }
         },
         mouseout: e => {
@@ -1983,20 +1530,25 @@ export default {
               break;
             }
           }
+          // debugger
           this.canvas.remove(watermark, btn);
           console.log("delete");
           this.saveJson();
         }
       });
     },
-    // 回退
-    saveJson() {    
+    // 保存图片数据
+    saveJson() {   
+      this.image.scaledWidth = this.image.getScaledWidth();
+      this.image.scaledHeight = this.image.getScaledHeight(); 
+      console.log(this.image.scaledWidth + " " + this.image.scaledHeight);
       if (this.curIndex == 0 && this.jsonList.length > 1) {
         this.jsonList.splice(1);
       }
       this.jsonList.push(this.canvas.toJSON());
       this.curIndex = this.jsonList.length - 1;
     },
+    // 回退
     returnBack(command) {
       this.jsonList[this.curIndex] = this.canvas.toJSON();
       console.log(this.jsonList);
@@ -2008,18 +1560,38 @@ export default {
       var self = this;
       var currentObj = this.jsonList[this.curIndex];
       this.watermarkGroup.splice(0);
+      // debugger
       this.canvas.loadFromJSON(currentObj,this.canvas.renderAll.bind(this.canvas),
-        function(o, object) {
-          debugger
+        function(o, object) {   
+          // debugger 
           if (object.name) {
             if (object.name == "watermark") {
+              var watermark = object;
+              watermark.toObject = (function(toObject) {
+                return function() {
+                  return fabric.util.object.extend(toObject.call(this), {
+                    name: this.name
+                  });
+                };
+              })(watermark.toObject);
+              watermark.name = 'watermark';
               self.watermarkGroup.push({
-                watermark: object,
+                watermark: watermark,
                 btn: new fabric.Image()
               });
             } else if (object.name == "btn") {
+              var btn = object;
+              btn.toObject = (function(toObject) {
+                return function() {
+                  return fabric.util.object.extend(toObject.call(this), {
+                    name: this.name
+                  });
+                };
+              })(btn.toObject);
+              btn.name = 'btn';
               var temp = self.watermarkGroup[self.watermarkGroup.length - 1];
-              temp.btn = object;
+              temp.btn = btn;
+              temp.btn.set('visible', false);
               self.watermarkListener(temp.watermark, temp.btn);
               self.clickBtn(temp.watermark, temp.btn);
             } else if (object.name == "mask") {
@@ -2027,17 +1599,53 @@ export default {
               self.maskWidth = self.mask.getScaledWidth();
               self.maskHeight = self.mask.getScaledHeight();
               self.maskScale = self.maskWidth / self.maskHeight;
+            } else if(object.name == "image"){
+              self.image = object;
+              self.scaleImage();
+              self.image.toObject = (function(toObject) {
+                return function() {
+                  return fabric.util.object.extend(toObject.call(this), {
+                    name: this.name,
+                    scaledWidth: this.scaledWidth,
+                    scaledHeight: this.scaledHeight,
+                  });
+                };
+              })(self.image.toObject);
+              self.image.name = 'watermark';
+              self.image.ScaledWidth = self.image.getScaledWidth();
+              self.image.ScaledHeight = self.image.getScaledHeight();
+              self.imgScaledWidth = self.image.ScaledWidth;
+              self.imgScaledHeight = self.image.ScaledHeight;
+              if(self.image.filters[0].brightness)
+                self.brightnessValue = self.image.filters[0].brightness;
+              if(self.image.filters[1].contrast)
+                self.contrastValue = self.image.filters[1].contrast;
+              if(self.image.filters[2].saturation)
+                self.saturationValue = self.image.filters[2].saturation;
+              if(self.image.filters[3].value)
+                self.blurValue = self.image.filters[3].value;
+              if(self.image.filters[5].matrix[4])
+                self.sharpenValue = self.image.filters[5].matrix[4];
+              if(self.image.filters[6].color)
+                self.blendColorValue = self.image.filters[6].color;
+              if(self.image.filters[6].mode)
+                self.blendModeValue = self.image.filters[6].mode;
+              if(self.image.filters[6].alpha)
+                self.blendAlphaValue = self.image.filters[6].alpha;
+              if(self.image.filters[4].gamma[0])
+                self.gammaRedValue = self.image.filters[4].gamma[0];
+              if(self.image.filters[4].gamma[1])
+                self.gammaGreenValue = self.image.filters[4].gamma[1];
+              if(self.image.filters[4].gamma[2])
+                self.gammaBlueValue = self.image.filters[4].gamma[2];
             }
-          } else {
-            debugger
-            self.image = object;
-            self.scaleImage();
-            self.imgScaledWidth = self.image.getScaledWidth();
-            self.imgScaledHeight = self.image.getScaledHeight();
           }
-        }
+        } 
       );
       this.canvas.renderAll();
+      if(this.watermarkGroup.length == 0){
+        this.state = '';
+      }
     }
   },
   mounted() {
