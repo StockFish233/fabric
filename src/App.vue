@@ -1,228 +1,258 @@
 <template>
   <div id="app">
-    <el-row>
+    <el-row style="margin: 0;">
       <el-col :md="24">
-        <el-row>oldIndex：{{oldIndex}}，当前：{{curIndex}}，总：{{jsonList.length}}
-          <el-button-group>
-            <el-button icon="el-icon-refresh-left"
-              type="primary" :disabled="returnPrevious"
-              @click="returnBack('previous')"></el-button>
-            <el-button icon="el-icon-refresh-right"
-              type="primary" :disabled="returnNext"
-              @click="returnBack('next')"></el-button>
-          </el-button-group>
-          <el-button-group v-if="state == ''">
-            <el-button type="primary" @click="chooseClip()">裁剪</el-button>
-            <!-- <el-button type="primary" @click="chooseResetSize()">尺寸</el-button>
-            <el-button type="primary" @click="addRotateMask()">旋转</el-button> -->
-            <el-button type="primary" @click="chooseFilters()">色彩</el-button>
-            <!-- <el-button type="primary" @click="chooseBrightness()">亮度</el-button>
-            <el-button type="primary" @click="chooseContrast()">对比度</el-button>
-            <el-button type="primary" @click="chooseSaturation()">饱和度</el-button>
-            <el-button type="primary" @click="chooseBlendColor()">混合颜色</el-button>
-            <el-button type="primary" @click="chooseSharpen()">锐化</el-button>
-            <el-button type="primary" @click="chooseGamma()">伽马</el-button>
-            <el-button type="primary" @click="chooseBlur()">模糊</el-button> -->
-            <el-button type="primary" @click="drawer = true">添加图片</el-button>
-          </el-button-group>
-          <el-button type="primary" @click="save()" v-if="state == ''">保存</el-button>
-        </el-row>
-        <el-row v-if="state == 'clip'">
-          <el-row type="flex" justify="center">
+        <el-row id="nav" ref="nav">
+          <el-row class="nav-box" style="margin: 0;"  v-if="state == ''">
+            <el-button-group>
+              <el-button icon="el-icon-refresh-left" :disabled="returnPrevious" type="info"
+                class="nav-button" @click="returnBack('previous')">
+              </el-button>
+              <el-button icon="el-icon-refresh-right" :disabled="returnNext" type="info" 
+                class="nav-button" @click="returnBack('next')">
+              </el-button>
+            </el-button-group>
+            <el-button-group>
+              <el-button @click="chooseClip()" class="nav-button" type="info" >裁剪</el-button>
+              <el-button @click="chooseFilters()" class="nav-button" type="info">色彩</el-button>
+              <el-button @click="drawer = true" class="nav-button" type="info">添加图片</el-button>
+            </el-button-group>
+            <el-button @click="save()" class="nav-button" type="info">保存</el-button>
+          </el-row>
+          <el-row class="nav-box" v-if="state == 'clip'">
+            <el-row type="flex" justify="center">
+              <el-col :md="2">
+                <el-button-group class="nav-button">
+                  <el-button icon="el-icon-refresh-left" :disabled="returnPrevious" type="info"
+                    class="subNav-button" @click="returnBack('previous')">
+                  </el-button>
+                  <el-button icon="el-icon-refresh-right" :disabled="returnNext" type="info"
+                    class="subNav-button" @click="returnBack('next')">
+                  </el-button>
+                </el-button-group>
+              </el-col>
+              <el-col :md="1">
+                <el-button @click="cancelClip()" class="subNav-button" type="info">取消</el-button>
+              </el-col>
+              <el-col :md="3">目前图片的宽&nbsp;&nbsp;
+                <el-input-number v-model="imgScaledWidth" class="inputStyle"  @change="changeImgScaledWidth()"
+                  :min="1"  :controls="false"></el-input-number>
+              </el-col>
+              <el-col :md="1">
+                <el-button icon="el-icon-lock" v-if="lockImageScale==true" class="subNav-button" type="info"
+                  @click="lockImageScale=false"></el-button>
+                <el-button icon="el-icon-unlock" v-else @click="lockImageScale=true" 
+                  class="subNav-button" type="info"></el-button>
+              </el-col>
+              <el-col :md="3">目前图片的高&nbsp;&nbsp;
+                <el-input-number v-model="imgScaledHeight" class="inputStyle"  @change="changeImgScaledHeight()"
+                  :controls="false" :min="1" ></el-input-number>
+              </el-col>
+              <el-col :md="3">
+                请选择裁剪形状&nbsp;&nbsp;
+                <el-select v-model="value" style="width: 100px;">
+                  <el-option v-for="item in shapes"
+                    :key="item.value" :label="item.label" :value="item.value"></el-option>
+                </el-select>
+              </el-col>
+              <el-col :md="1">
+                <el-button @click="toClip()" class="subNav-button" type="info">应用</el-button>
+              </el-col>
+            </el-row>
+            <el-row>
+              <el-row v-if="value == 'rect'">
+                <el-button-group>
+                  <el-button @click="clipImage('1:1')" class="subNav-button" type="info" >1:1</el-button>
+                  <el-button @click="clipImage('3:2')" class="subNav-button" type="info" >3:2</el-button>
+                  <el-button @click="clipImage('4:3')" class="subNav-button" type="info" >4:3</el-button>
+                  <el-button @click="clipImage('16:9')" class="subNav-button" type="info" >16:9</el-button>
+                </el-button-group>&nbsp;&nbsp;
+                框的宽度&nbsp;
+                <el-input-number class="inputStyle" v-model="maskWidth"
+                  :precision="0" :controls="false" :min="1" ></el-input-number>&nbsp;
+                <el-button icon="el-icon-lock" class="subNav-button" v-if="lockMaskScale==true" 
+                  @click="lockMaskScale=false" type="info"></el-button>
+                <el-button icon="el-icon-unlock" class="subNav-button" v-else 
+                  @click="lockMaskScale=true" type="info"></el-button>
+                &nbsp;框的高度&nbsp;
+                <el-input-number class="inputStyle" v-model="maskHeight" :precision="0"
+                  :controls="false" :min="1" ></el-input-number>
+              </el-row>
+              <el-row v-else-if="value == 'circle'">
+                框的半径&nbsp;
+                <el-input-number :precision="0" v-model="maskRadius"  :controls="false"
+                  :min="1" :max="canvasHeight/2"></el-input-number>&nbsp;&nbsp;
+              </el-row>
+            </el-row>
+            <el-row style="margin-bottom: 10px;">
+              <el-button-group>
+                <el-button @click="changeAngle('left')" class="subNav-button" type="info" >左旋转90</el-button>
+                <el-button @click="changeAngle('right')" class="subNav-button" type="info" >右旋转90</el-button>
+                <el-button @click="changeAngle('x')" class="subNav-button" type="info" >水平翻转</el-button>
+                <el-button @click="changeAngle('y')" class="subNav-button" type="info" >垂直翻转</el-button>
+              </el-button-group>
+            </el-row>
+          </el-row>
+          <el-row class="nav-box" v-else-if="state == 'resetSize'"
+            type="flex"
+            justify="center"
+            style="margin:0 auto;margin-top:20px;">
             <el-col :md="1">
-              <el-button @click="cancelClip()">取消</el-button>
+              <el-button @click="refreshSize()">取消</el-button>
             </el-col>
-            <el-col :md="3">目前图片的宽&nbsp;&nbsp;
-              <el-input-number v-model="imgScaledWidth" class="inputStyle" :precision="0" @change="changeImgScaledWidth()"
-                :min="1"  :controls="false"></el-input-number>
+            <el-col :md="4">
+              宽&nbsp;&nbsp;
+              <el-input-number
+                v-model="imgScaledWidth"
+                class="inputStyle"
+                :precision="0"
+                :controls="false"
+                :min="1"
+                :max="imgWidth"
+              ></el-input-number>
             </el-col>
             <el-col :md="1">
-              <el-button icon="el-icon-lock" type="primary" v-if="lockImageScale==true"
-                @click="lockImageScale=false"></el-button>
+              <el-button
+                icon="el-icon-lock"
+                type="primary"
+                v-if="lockImageScale==true"
+                @click="lockImageScale=false"
+              ></el-button>
               <el-button icon="el-icon-unlock" type="primary" v-else @click="lockImageScale=true"></el-button>
             </el-col>
-            <el-col :md="3">目前图片的高&nbsp;&nbsp;
-              <el-input-number v-model="imgScaledHeight" class="inputStyle" :precision="0" @change="changeImgScaledHeight()"
-                :controls="false" :min="1" ></el-input-number>
+            <el-col :md="4">
+              高&nbsp;&nbsp;
+              <el-input-number
+                v-model="imgScaledHeight"
+                class="inputStyle"
+                :precision="0"
+                :controls="false"
+                :min="1"
+                :max="imgWidth"
+              ></el-input-number>
             </el-col>
             <el-col :md="1">
-              <el-button @click="toClip()">应用</el-button>
+              <el-button @click="toResetSize()">应用</el-button>
             </el-col>
           </el-row>
-          <el-row>
-            请选择裁剪框的形状&nbsp;&nbsp;
-            <el-select v-model="value" placeholder="请选择裁剪框的形状" style="width: 100px;">
-              <el-option v-for="item in shapes"
-                :key="item.value" :label="item.label" :value="item.value"></el-option>
-            </el-select>
-            <el-row v-if="value == 'rect'">
-              <el-button-group>
-                <el-button @click="clipImage('1:1')">1:1</el-button>
-                <el-button @click="clipImage('3:2')">3:2</el-button>
-                <el-button @click="clipImage('4:3')">4:3</el-button>
-                <el-button @click="clipImage('16:9')">16:9</el-button>
-              </el-button-group>&nbsp;&nbsp;
-              框的宽度&nbsp;
-              <el-input-number class="inputStyle" v-model="maskWidth"
-                :precision="0" :controls="false" :min="1" ></el-input-number>&nbsp;
-              <el-button icon="el-icon-lock" type="primary" v-if="lockMaskScale==true" @click="lockMaskScale=false"></el-button>
-              <el-button icon="el-icon-unlock" type="primary" v-else @click="lockMaskScale=true"></el-button>
-              框的高度&nbsp;
-              <el-input-number class="inputStyle" v-model="maskHeight" :precision="0"
-                :controls="false" :min="1" ></el-input-number>
-            </el-row>
-            <el-row v-else-if="value == 'circle'">
-              框的半径&nbsp;
-              <el-input-number :precision="0" v-model="maskRadius"  :controls="false"
-                :min="1" :max="canvasHeight/2"></el-input-number>&nbsp;&nbsp;
-            </el-row>
-          </el-row>
-          <el-row>
+          <el-row class="nav-box" v-else-if="state == 'rotate'">
             <el-button-group>
+              <el-button @click="restoreAngle()">取消</el-button>
               <el-button @click="changeAngle('left')">左旋转90</el-button>
               <el-button @click="changeAngle('right')">右旋转90</el-button>
               <el-button @click="changeAngle('x')">水平翻转</el-button>
               <el-button @click="changeAngle('y')">垂直翻转</el-button>
+              <el-button @click="toRotate()">应用</el-button>
             </el-button-group>
           </el-row>
-        </el-row>
-        <el-row v-else-if="state == 'resetSize'"
-          type="flex"
-          justify="center"
-          style="margin:0 auto;margin-top:20px;">
-          <el-col :md="1">
-            <el-button @click="refreshSize()">取消</el-button>
-          </el-col>
-          <el-col :md="4">
-            宽&nbsp;&nbsp;
-            <el-input-number
-              v-model="imgScaledWidth"
-              class="inputStyle"
-              :precision="0"
-               :controls="false"
-              :min="1"
-              :max="imgWidth"
-            ></el-input-number>
-          </el-col>
-          <el-col :md="1">
-            <el-button
-              icon="el-icon-lock"
-              type="primary"
-              v-if="lockImageScale==true"
-              @click="lockImageScale=false"
-            ></el-button>
-            <el-button icon="el-icon-unlock" type="primary" v-else @click="lockImageScale=true"></el-button>
-          </el-col>
-          <el-col :md="4">
-            高&nbsp;&nbsp;
-            <el-input-number
-              v-model="imgScaledHeight"
-              class="inputStyle"
-              :precision="0"
-               :controls="false"
-              :min="1"
-              :max="imgWidth"
-            ></el-input-number>
-          </el-col>
-          <el-col :md="1">
-            <el-button @click="toResetSize()">应用</el-button>
-          </el-col>
-        </el-row>
-        <el-row v-else-if="state == 'rotate'">
-          <el-button-group>
-            <el-button @click="restoreAngle()">取消</el-button>
-            <el-button @click="changeAngle('left')">左旋转90</el-button>
-            <el-button @click="changeAngle('right')">右旋转90</el-button>
-            <el-button @click="changeAngle('x')">水平翻转</el-button>
-            <el-button @click="changeAngle('y')">垂直翻转</el-button>
-            <el-button @click="toRotate()">应用</el-button>
-          </el-button-group>
-        </el-row>
-        <el-row v-else-if="state == 'filters'">
-          <el-row type="flex" justify="center">
-            <el-col :md="1" class="filterName">亮度</el-col>
+          <el-row class="nav-box" v-else-if="state == 'filters'">
+            <el-row type="flex" justify="center">
+              <el-col :md="1" class="filterName">亮度</el-col>
+              <el-col :md="2">
+                <el-slider class="filterSlider" v-model="brightnessValue"
+                  :min="-1" :max="1" :step="0.000001" @input="changeBrightness()" @change="saveJson()"></el-slider>
+              </el-col>
+              <el-col :md="1" class="filterName">对比度</el-col>
+              <el-col :md="2">
+                <el-slider class="filterSlider" v-model="contrastValue"
+                  :min="-1" :max="1" :step="0.000001" @input="changeContrast()" @change="saveJson()"></el-slider>
+              </el-col>
+              <el-col :md="1" class="filterName">饱和度</el-col>
+              <el-col :md="2">
+                <el-slider class="filterSlider" v-model="saturationValue"
+                  :min="-1" :max="1" :step="0.000001" @input="changeSaturation()" @change="saveJson()"></el-slider>
+              </el-col>
+              <el-col :md="1" class="filterName">模糊度</el-col>
+              <el-col :md="2">
+                <el-slider class="filterSlider" v-model="blurValue"
+                  :min="0" :max="1" :step="0.0001" @input="changeBlur()" @change="saveJson()"></el-slider>
+              </el-col>
+            </el-row>
+            <el-row type="flex" justify="center">
+              <!-- <el-col :md="1" class="filterName" style="margin-left:0px;">伽马</el-col> -->
+              <el-col :md="1" class="filterName">red</el-col>
+              <el-col :md="2">
+                <el-slider class="filterSlider" v-model="gammaRedValue"
+                  :min="0.01" :max="2.2" :step="0.001" @input="changeGamma('red')" @change="saveJson()"></el-slider>
+              </el-col>
+              <el-col :md="1" class="filterName">green</el-col>
+              <el-col :md="2">
+                <el-slider class="filterSlider" v-model="gammaGreenValue"
+                  :min="0.01" :max="2.2" :step="0.001" @input="changeGamma('green')" @change="saveJson()"></el-slider>
+              </el-col>
+              <el-col :md="1" class="filterName">blue</el-col>
+              <el-col :md="2">
+                <el-slider class="filterSlider" v-model="gammaBlueValue"
+                  :min="0.01" :max="2.2" :step="0.001" @input="changeGamma('blue')" @change="saveJson()"></el-slider>
+              </el-col>
+              <el-col :md="1" class="filterName">锐化</el-col>
+              <el-col :md="2">
+                <el-slider class="filterSlider" v-model="sharpenValue"  @change="saveJson()"
+                  :min="1" :max="100" :step="1" @input="changeSharpen()"></el-slider>
+              </el-col>
+            </el-row>
+            <el-row type="flex" justify="center" style="margin-bottom:10px;">
+              <el-col :md="2">
+                <el-button-group class="nav-button">
+                  <el-button icon="el-icon-refresh-left" :disabled="returnPrevious" type="info"
+                    class="subNav-button" @click="returnBack('previous')">
+                  </el-button>
+                  <el-button icon="el-icon-refresh-right" :disabled="returnNext" type="info"
+                    class="subNav-button" @click="returnBack('next')">
+                  </el-button>
+                </el-button-group>
+              </el-col>
+              <el-col :md="1">
+                <el-button @click="cancelFilters()" class="subNav-button" type="info">取消</el-button>
+              </el-col>
+              <el-col :md="1" class="filterName">模式</el-col>
+              <el-col :md="1">
+                <el-select v-model="blendModeValue" @change="changeBlend('mode')">
+                  <el-option v-for="item in blendModeList"
+                    :key="item.value" :label="item.label" :value="item.value"></el-option>
+                </el-select>
+              </el-col>
+              <el-col :md="1" class="filterName">颜色</el-col>
+              <el-col :md="1">
+                <el-color-picker v-model="blendColorValue" @change="changeBlend('color') "
+                  style="margin-right: 50px;"></el-color-picker>
+              </el-col>
+              <el-col :md="2">
+                <el-slider class="filterSlider" v-model="blendAlphaValue" @change="saveJson()"
+                  :min="0" :max="1" :step="0.01" @input="changeBlend('alpha')"></el-slider>
+              </el-col>
+              <el-col :md="1" style="margin-left: 25px;">
+                <el-button @click="saveFilters()" class="subNav-button" type="info">应用</el-button>
+              </el-col>
+            </el-row>
+          </el-row>
+          <el-row class="nav-box" v-if="state == 'watermark'" type="flex" justify="center">
             <el-col :md="2">
-              <el-slider class="filterSlider" v-model="brightnessValue"
-                :min="-1" :max="1" :step="0.000001" @input="changeBrightness()" @change="saveJson()"></el-slider>
+              <el-button-group class="nav-button">
+                <el-button icon="el-icon-refresh-left" :disabled="returnPrevious" type="info"
+                  class="subNav-button" @click="returnBack('previous')">
+                </el-button>
+                <el-button icon="el-icon-refresh-right" :disabled="returnNext" type="info"
+                  class="subNav-button" @click="returnBack('next')">
+                </el-button>
+              </el-button-group>
             </el-col>
-            <el-col :md="1" class="filterName">对比度</el-col>
             <el-col :md="2">
-              <el-slider class="filterSlider" v-model="contrastValue"
-                :min="-1" :max="1" :step="0.000001" @input="changeContrast()" @change="saveJson()"></el-slider>
+              <el-button @click="state=''" class="subNav-button" type="info">返回</el-button>
             </el-col>
-            <el-col :md="1" class="filterName">饱和度</el-col>
+            <el-col :md="2" class="filterName">水印透明度</el-col>
             <el-col :md="2">
-              <el-slider class="filterSlider" v-model="saturationValue"
-                :min="-1" :max="1" :step="0.000001" @input="changeSaturation()" @change="saveJson()"></el-slider>
-            </el-col>
-            <el-col :md="1" class="filterName">模糊度</el-col>
-            <el-col :md="2">
-              <el-slider class="filterSlider" v-model="blurValue"
-                :min="0" :max="1" :step="0.0001" @input="changeBlur()" @change="saveJson()"></el-slider>
+              <el-slider class="filterSlider" v-model=" opacityValue"
+                :min="0" :max="1" :step="0.001" @input="changeOpacity()" @change="saveJson()"></el-slider>
             </el-col>
           </el-row>
-          <el-row type="flex" justify="center">
-            <!-- <el-col :md="1" class="filterName" style="margin-left:0px;">伽马</el-col> -->
-            <el-col :md="1" class="filterName">red</el-col>
-            <el-col :md="2">
-              <el-slider class="filterSlider" v-model="gammaRedValue"
-                :min="0.01" :max="2.2" :step="0.001" @input="changeGamma('red')" @change="saveJson()"></el-slider>
-            </el-col>
-            <el-col :md="1" class="filterName">green</el-col>
-            <el-col :md="2">
-              <el-slider class="filterSlider" v-model="gammaGreenValue"
-                :min="0.01" :max="2.2" :step="0.001" @input="changeGamma('green')" @change="saveJson()"></el-slider>
-            </el-col>
-            <el-col :md="1" class="filterName">blue</el-col>
-            <el-col :md="2">
-              <el-slider class="filterSlider" v-model="gammaBlueValue"
-                :min="0.01" :max="2.2" :step="0.001" @input="changeGamma('blue')" @change="saveJson()"></el-slider>
-            </el-col>
-            <el-col :md="1" class="filterName">锐化</el-col>
-            <el-col :md="2">
-              <el-slider class="filterSlider" v-model="sharpenValue"  @change="saveJson()"
-                :min="1" :max="100" :step="1" @input="changeSharpen()"></el-slider>
-            </el-col>
-          </el-row>
-          <el-row type="flex" justify="center">
-            <el-col :md="1">
-              <el-button @click="cancelFilters()">取消</el-button>
-            </el-col>
-            <el-col :md="1" class="filterName">模式</el-col>
-            <el-col :md="1">
-              <el-select v-model="blendModeValue" @change="changeBlend('mode')">
-                <el-option v-for="item in blendModeList"
-                  :key="item.value" :label="item.label" :value="item.value"></el-option>
-              </el-select>
-            </el-col>
-            <el-col :md="1" class="filterName">颜色</el-col>
-            <el-col :md="1">
-              <el-color-picker v-model="blendColorValue" @change="changeBlend('color') "
-                style="margin-right: 50px;"></el-color-picker>
-            </el-col>
-            <el-col :md="2">
-              <el-slider class="filterSlider" v-model="blendAlphaValue" @change="saveJson()"
-                :min="0" :max="1" :step="0.01" @input="changeBlend('alpha')"></el-slider>
-            </el-col>
-            <el-col :md="1" style="margin-left: 25px;">
-              <el-button @click="saveFilters()">应用</el-button>
-            </el-col>
-          </el-row>
-        </el-row>
-        <el-row v-if="state == 'watermark'" type="flex" justify="center">
-          <el-col :md="2" class="filterName">水印透明度</el-col>
-          <el-col :md="2">
-            <el-slider class="filterSlider" v-model=" opacityValue"
-              :min="0" :max="1" :step="0.001" @input="changeOpacity()" @change="saveJson()"></el-slider>
-          </el-col>
         </el-row>
         <el-row type="flex" justify="center" style="margin-top: 20px;">
           <el-col :md="24" class="canvasDiv" id="canvasDiv">
             <canvas id="canvas" :width="canvasWidth" :height="canvasHeight"></canvas>
-            <!-- <canvas id="canvas_copy" :width="canvasWidth" :height="canvasHeight"></canvas> -->
             <br />
             <img :src="imgSrc" id="img" style="display:none;" @load="init" />
-            <img :src="imgSrc_clip" id="img_clip" style="" @load="init_clip" />
+            <img :src="imgSrc_clip" id="img_clip" style="display:none;" @load="init_clip" />
           </el-col>
         </el-row>
       </el-col>
@@ -248,7 +278,9 @@ export default {
   data() {
     return {
       canvasWidth: 1500,
-      canvasHeight: 800,
+      canvasHeight: 864,
+      canvasLeft: 0,
+      canvasTop: 175,
       imgSrc: "../static/douyi.jpg",
       imgSrc_clip: "",
       btnSrc: "../static/del.png",
@@ -278,6 +310,9 @@ export default {
       rotateMode: "", // 记录旋转模式
       rotating: false, // 记录是否旋转中
       moving: false, // 记录是否移动中
+      toMoving: false, // 在mask中点击移动图片
+      width: 0, // 记录当前点与顶点的距离
+      height: 0,
       scaling: false, // 记录是否缩放了
       watermarkGroup: [],
       image: new fabric.Image(),
@@ -438,6 +473,8 @@ export default {
       this.image.clipPath.setCoords();
       this.canvas.renderAll();
       this.addMask();
+      // this.mousewheelImage("on");
+      // this.scaleMask("on");
     },
     curIndex: function() {
       if (this.curIndex > this.oldIndex) {
@@ -512,12 +549,11 @@ export default {
       })(this.image.toObject);
       this.canvas.add(this.image);
       this.image.name = "image";
-      this.image.scaledWidth = this.image.getScaledWidth();
-      this.image.scaledHeight = this.image.getScaledHeight();
       this.image.center();
       this.image.setCoords();
       this.mask.setCoords();
       this.canvas.preserveObjectStacking = true; // 禁止选中图层时自定义顶部
+      this.canvas.selection = false;
       var max;
       if (this.image.width > this.image.height) {
         max = this.image.width;
@@ -613,16 +649,26 @@ export default {
       console.log("当前图片的宽：" + Math.round(this.image.getScaledWidth()) + " 高：" + Math.round(this.image.getScaledHeight()));
       this.imgScaledWidth = Math.round(this.image.getScaledWidth());
       this.imgScaledHeight = Math.round(this.image.getScaledHeight());
+      this.image.scaledWidth = this.imgScaledWidth;
+      this.image.scaledHeight = this.imgScaledHeight;
+      // this.imgScaledWidth = this.image.getScaledWidth();
+      // this.imgScaledHeight = this.image.getScaledHeight();
     },
 
     // 裁剪相关方法
     chooseClip(){
       this.state = "clip";
-      this.addMask();
-      this.oldIndex = this.curIndex;
-      this.imgScaledWidth = this.image.scaledWidth;
-      this.imgScaledHeight = this.image.scaledHeight;
-      console.log("当前图片的宽高：" + this.imgScaledWidth + "," + this.imgScaledHeight);
+      this.$nextTick(() => {
+        this.canvasHeight = window.innerHeight - this.$refs.nav.$el.offsetHeight - 40;
+        this.canvas.setHeight(this.canvasHeight);
+        // this.refreshScale();
+        this.canvas.renderAll();
+        this.addMask();
+        this.oldIndex = this.curIndex;
+        this.imgScaledWidth = this.image.scaledWidth;
+        this.imgScaledHeight = this.image.scaledHeight;
+        console.log("当前图片的宽高：" + this.imgScaledWidth + "," + this.imgScaledHeight);
+      })
     },
     addMask() {
       if (this.mask) {
@@ -634,7 +680,6 @@ export default {
           top: this.image.top,
           originX: "left",
           originY: "top",
-          // selectable: false,
           stroke: "#F5A623",
           strokeWidth: 5,
           cornerColor: "#F5A623",
@@ -651,15 +696,23 @@ export default {
           hasControls: false,
           lockMovementX: true,
           lockMovementY: true,
-          selectable: false,
+          // selectable: false,
         });
-        // this.mask.width = this.newImgWidth;
-        // this.mask.height = this.newImgHeight;
+        debugger       
+        this.mask.setCoords();
+        this.mask.center();
+        this.mask.setCoords();
         this.mask.width = this.image.getScaledWidth();
         this.mask.height = this.image.getScaledHeight();
         this.maskWidth = this.mask.getScaledWidth();
         this.maskHeight = this.mask.getScaledHeight();
-        this.mask.setCoords();
+        if (this.maskWidth > this.canvasWidth)
+          this.maskWidth = this.canvas.width;
+        this.mask.set("width", this.maskWidth);
+        if (this.maskHeight > this.canvasHeight)
+          this.maskHeight = this.canvas.height;
+        this.mask.set("height", this.maskHeight);
+        // this.mask.setCoords();
         this.mask.toObject = (function(toObject) {
           return function() {
             return fabric.util.object.extend(toObject.call(this), {
@@ -677,6 +730,9 @@ export default {
         } else {
           min = this.image.getScaledWidth();
         }
+        if (min > this.canvasHeight) {
+          min = this.canvasHeight;
+        }
         this.mask = new fabric.Circle({
           radius: min / 2,
           fill: "rgba(255, 255, 255, 0)",
@@ -688,9 +744,8 @@ export default {
           hasControls: false,
           lockMovementX: true,
           lockMovementY: true,
-          selectable: false,
+          // selectable: false,
         });
-        debugger
         this.mask.toObject = (function(toObject) {
           return function() {
             return fabric.util.object.extend(toObject.call(this), {
@@ -698,8 +753,6 @@ export default {
             });
           };
         })(this.mask.toObject);
-        this.maskRadius = this.mask.radius;
-        this.maskScale = 1;
         this.mask.setControlsVisibility({
           mt: false,
           mr: false,
@@ -711,7 +764,8 @@ export default {
         this.mask.center();
         this.mask.setCoords();
         this.canvas.setActiveObject(this.image);
-        this.canvas.renderAll();
+        this.maskRadius = this.mask.radius;
+        this.maskScale = 1;
       }
       this.mask.name = "mask";
       this.canvas.renderAll();
@@ -720,6 +774,63 @@ export default {
       this.newImgScaleX = 1;
       this.newImgScaleY = 1;
       this.saveJson();
+      var self = this;
+      this.mask.on({
+        mousedown: e => { 
+          if(self.image.containsPoint(e.pointer)){
+            self.toMoving = true;
+            self.width = e.pointer.x - self.image.left;
+            self.height = e.pointer.y - self.image.top;
+            self.canvas.setActiveObject(self.image);
+          }else{
+            self.toMoving = false;
+            self.canvas.discardActiveObject();
+          }
+        },
+        mouseup: e => {
+          if(self.toMoving){
+            console.log("now point ("+ e.pointer.x + "," + e.pointer.y + ")");
+            self.imgLeft = e.pointer.x - self.width;
+            self.imgTop = e.pointer.y - self.height;
+            self.image.set('left', self.imgLeft);
+            self.image.set('top', self.imgTop);
+            self.image.setCoords();
+            console.log("image point ("+ self.image.left + "," + self.image.top + ")");
+            self.canvas.renderAll();
+            self.toMoving = false;
+            this.saveJson();
+          }
+        },
+        mousemove: e => {
+          if(self.toMoving){
+            console.log("mousemove in mask");
+            self.imgLeft = e.pointer.x - self.width;
+            self.imgTop = e.pointer.y - self.height;
+            self.image.set('left', self.imgLeft);
+            self.image.set('top', self.imgTop);
+            self.image.setCoords();
+            self.canvas.renderAll();
+          }
+        }
+      });
+    },
+    moveImageToCanvas(event){
+      if(event.x > this.canvas._offset.left && event.x < this.canvas._offset.left + this.canvas.width &&
+        event.y > this.canvas._offset.top && event.y < this.canvas._offset.top + this.canvas.height){    
+        if(this.toMoving){
+          console.log("move image");
+          console.log("now point ("+ event.x + "," + event.y + ")");
+          this.imgLeft = event.x - this.width;
+          this.imgTop = event.y - this.height;
+          this.image.set('left', this.imgLeft);
+          this.image.set('top', this.imgTop);
+          this.image.setCoords();
+          console.log("image point ("+ this.image.left + "," + this.image.top + ")");
+          this.canvas.renderAll();
+          this.saveJson();
+          this.toMoving = false;
+        }
+      }
     },
     cancelClip() {
       this.state = "";
@@ -728,8 +839,15 @@ export default {
       this.jsonList.splice(this.oldIndex);
       this.curIndex = this.oldIndex;
       this.returnBack("previous");
-      this.curIndex = this.oldIndex - 1;   
+      this.curIndex = this.oldIndex - 1; 
+      this.canvas.remove(this.mask);  
       this.oldIndex = 0;
+      this.$nextTick(() => {
+        this.canvasHeight = window.innerHeight - this.$refs.nav.$el.offsetHeight - 40;
+        this.canvas.setHeight(this.canvasHeight);
+        // this.refreshScale();
+        this.canvas.renderAll();
+      })
     },
     // 选择裁剪框尺寸
     clipImage(command) {
@@ -817,6 +935,11 @@ export default {
     },
     toClip() {
       this.state = "";
+      this.$nextTick(() => {
+        this.canvasHeight = window.innerHeight - this.$refs.nav.$el.offsetHeight - 40;
+        this.canvas.setHeight(this.canvasHeight);
+        this.canvas.renderAll();
+      })
       this.mask.setCoords();
       this.image.setCoords();
       this.newImgLeft = this.mask.left;
@@ -949,8 +1072,53 @@ export default {
             this.mousewheeling = false;
           }
         });
+        this.mask.on({
+          mousewheel: opt => {
+            console.log("event mousewheel");
+            if (opt && opt.e) {
+              opt.e.preventDefault();
+              opt.e.stopPropagation();
+            }
+            if (this.mousewheeling) return;
+            this.mousewheeling = true;
+            var oriWidth, oriHeight;
+            var delta = -(opt && opt.e && opt.e.deltaY) || 100;
+            var width = (oriWidth = this.image.getScaledWidth());
+            var height = (oriHeight = this.image.getScaledHeight());
+            var oriLeft = this.image.get("left");
+            var oriTop = this.image.get("top");
+            // var clipWidth = this.imgScaledWidth;
+            // var clipHeight = this.imgScaledHeight;
+            var clipWidth = this.mask.getScaledWidth();
+            var clipHeight = this.mask.getScaledHeight();
+            var ratio = width / height;
+            width = width + delta / 1;
+            height = height + delta / 1;
+            if (delta < 0 && (width <= clipWidth || height <= clipHeight)) {
+              if (clipWidth / clipHeight > ratio) {
+                this.image.scaleToWidth(clipWidth);
+              } else {
+                this.image.scaleToHeight(clipHeight);
+              }
+              this.keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight);
+            } else if (delta > 0 &&
+              (width >= this.image.get("width") * this.MAX_SIZE ||
+                height >= this.image.get("height") * this.MAX_SIZE)) {
+            } else {
+              this.image.scaleToWidth(width);
+              this.keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight);
+            }
+            this.image.setCoords();
+            this.mask.setCoords();
+            this.canvas.renderAll();
+            this.imgScaledWidth = this.image.getScaledWidth();
+            this.imgScaledHeight = this.image.getScaledHeight();
+            this.mousewheeling = false;
+          }
+        })
       } else if (command == "off") {
         this.image.off("mousewheel");
+        this.mask.off("mousewheel");
         console.log("mousewheel off");
       }
     },
@@ -973,14 +1141,26 @@ export default {
       this.image.setCoords();
     }, 
     changeImgScaledWidth(){
+      this.image.set('scaleX', this.imgScaledWidth / this.image.width);
+      this.image.scaledWidth = this.imgScaledWidth;
       if (this.lockImageScale && !this.mousewheeling) {
         this.imgScaledHeight = this.imgScaledWidth / this.imgScale;
+        this.image.scaledHeight = this.imgScaledHeight;
+        this.image.set('scaleY', this.imgScaledHeight / this.image.height);
       }
+      this.canvas.renderAll();
+      this.saveJson();
     },
     changeImgScaledHeight(){
+      this.image.scaledHeight = this.imgScaledHeight;
+      this.image.set('scaleY', this.imgScaledHeight / this.image.height);
       if (this.lockImageScale && !this.mousewheeling) {
         this.imgScaledWidth = this.imgScaledHeight * this.imgScale;
+        this.image.scaledWidth = this.imgScaledWidth;
+        this.image.set('scaleX', this.imgScaledWidth / this.image.width);
       }
+      this.canvas.renderAll();
+      this.saveJson();
     },
     scaleImage() {
       console.log("listening image");
@@ -1017,17 +1197,16 @@ export default {
             if(self.imgTop != self.image.top || self.imgLeft != self.image.left){
               self.moving = true;
             }
-            if((!self.scaling) && self.moving){
-              
+            if((!self.scaling) && self.moving){   
               self.moving = false;
               self.saveJson();
             }
           }
           self.scaling = false;
         }
-      });      
+      }); 
+         
     },
-
     // 改变尺寸（缩放）相关方法
     toResetSize() {
       if (this.lockImageScale) {
@@ -1202,6 +1381,10 @@ export default {
     chooseFilters(){
       this.oldIndex = this.curIndex;
       this.state='filters';
+      this.$nextTick(() => {
+        this.canvasHeight = window.innerHeight - this.$refs.nav.$el.offsetHeight - 40;
+        this.canvas.setHeight(this.canvasHeight);
+      })
     },
     toApplyFilters(){
       this.applyFilter(0, new fabric.Image.filters.Brightness({
@@ -1237,29 +1420,40 @@ export default {
     },
     cancelFilters(){
       this.state = "";
+      this.canvas.remove(this.mask);
       this.curIndex = this.oldIndex + 1;
       this.returnBack("previous");
       this.curIndex = this.oldIndex;
       this.jsonList.splice(this.curIndex + 1);
+      this.canvas.remove(this.mask);
       this.oldIndex = 0;
+      this.$nextTick(() => {
+        this.canvasHeight = window.innerHeight - this.$refs.nav.$el.offsetHeight - 40;
+        this.canvas.setHeight(this.canvasHeight);
+        this.canvas.renderAll();
+      })
     },
     saveFilters(){
       this.state = "";
-      this.brightness = this.brightnessValue;
-      this.contrast = this.contrastValue;
-      this.saturation = this.saturationValue;
-      this.sharpen = this.sharpenValue;
-      this.blur = this.blurValue;
-      this.gammaRed = this.gammaRedValue;
-      this.gammaGreen = this.gammaGreenValue;
-      this.gammaBlue = this.gammaBlueValue;
-      this.blendColor = this.blendColorValue;
-      this.blendMode = this.blendModeValue;
-      this.blendAlpha = this.blendAlphaValue;
-      this.curIndex = this.oldIndex;
-      this.jsonList.splice(this.curIndex + 1);
-      this.saveJson();
-      this.oldIndex = 0;
+      this.$nextTick(() => {
+        this.canvasHeight = window.innerHeight - this.$refs.nav.$el.offsetHeight - 40;
+        this.canvas.setHeight(this.canvasHeight);
+        this.brightness = this.brightnessValue;
+        this.contrast = this.contrastValue;
+        this.saturation = this.saturationValue;
+        this.sharpen = this.sharpenValue;
+        this.blur = this.blurValue;
+        this.gammaRed = this.gammaRedValue;
+        this.gammaGreen = this.gammaGreenValue;
+        this.gammaBlue = this.gammaBlueValue;
+        this.blendColor = this.blendColorValue;
+        this.blendMode = this.blendModeValue;
+        this.blendAlpha = this.blendAlphaValue;
+        this.curIndex = this.oldIndex;
+        this.jsonList.splice(this.curIndex + 1);
+        this.saveJson();
+        this.oldIndex = 0;
+      })
     },
     // 亮度
     changeBrightness() {
@@ -1418,18 +1612,23 @@ export default {
       this.canvas.add(watermark, btn);
       watermark.name = "watermark";
       btn.name = "btn";
+      this.canvas.setActiveObject(watermark);
       this.canvas.renderAll();
       this.watermarkGroup.push({ watermark: watermark, btn: btn });
       this.clickBtn(watermark, btn);
       this.watermarkListener(watermark, btn);
       this.saveJson();
+      this.state = "watermark";
     },
+    // 调节水印透明度
     changeOpacity(){
       var object = this.canvas.getActiveObject();
-      object.set('opacity', this.opacityValue);
-      this.canvas.renderAll();
+      if(object.name == 'watermark'){
+        object.set('opacity', this.opacityValue);
+        this.canvas.renderAll();
+      }
     },
-    // 监听水印的鼠标事件
+    // 监听水印
     watermarkListener(watermark, btn) {
       watermark.on({
         scaling: e => {
@@ -1437,9 +1636,6 @@ export default {
           btn.set("left", watermark.left + watermark.getScaledWidth() - 30);
           btn.setCoords();
           this.canvas.renderAll();  
-        },
-        scaled: e => {
-          // this.saveJson();
         },
         mousedown: e => {
           this.state = "watermark";
@@ -1467,7 +1663,7 @@ export default {
           this.canvas.renderAll();
         },
         mouseup: e => {
-          this.opacityValue = watermark.opacity;
+          // this.opacityValue = watermark.opacity;
           if (!(watermark.left + watermark.getScaledWidth() - 30 < e.pointer.x &&
             e.pointer.x < watermark.left + watermark.getScaledWidth() - 10 &&
             watermark.top + 10 < e.pointer.y && e.pointer.y < watermark.top + 30)) {
@@ -1504,15 +1700,19 @@ export default {
               btn.set("left", pointer.x - 15);
             }
             console.log(watermark.angle);
-            btn.set("visible", true);
-            btn.setCoords();
-            this.canvas.renderAll();
-            this.saveJson();
           }
+          btn.set("visible", true);
+          btn.setCoords();
+          this.canvas.renderAll();
+          this.saveJson();
         },
         mouseout: e => {
           btn.set("visible", false);
-        }
+        },
+        selected: e => {
+          this.state = "watermark";
+          this.opacityValue = watermark.opacity;
+        },
       });
     },
     clickBtn(watermark, btn) {
@@ -1533,8 +1733,8 @@ export default {
     },
     // 保存图片数据
     saveJson() {   
-      this.image.scaledWidth = Math.round(this.image.getScaledWidth());
-      this.image.scaledHeight = Math.round(this.image.getScaledHeight()); 
+      // this.image.scaledWidth = this.imgScaledWidth;
+      // this.image.scaledHeight = htis.imgScaledHeight; 
       console.log(this.image.scaledWidth + " " + this.image.scaledHeight);
       if (this.curIndex == 0 && this.jsonList.length > 1) {
         this.jsonList.splice(1);
@@ -1555,7 +1755,7 @@ export default {
       this.watermarkGroup.splice(0);
       this.canvas.loadFromJSON(currentObj,this.canvas.renderAll.bind(this.canvas),
         function(o, object) {   
-          debugger 
+          // debugger 
           if (object.name) {
             if (object.name == "watermark") {
               var watermark = object;
@@ -1587,12 +1787,25 @@ export default {
               self.watermarkListener(temp.watermark, temp.btn);
               self.clickBtn(temp.watermark, temp.btn);
             } else if (object.name == "mask") {
+              debugger
               self.mask = object;
+              self.mask.toObject = (function(toObject) {
+                return function() {
+                  return fabric.util.object.extend(toObject.call(this), {
+                    name: this.name
+                  });
+                };
+              })(self.mask.toObject);
+              self.mask.name = 'mask';
               self.maskWidth = self.mask.getScaledWidth();
               self.maskHeight = self.mask.getScaledHeight();
+              // self.mask.center();
+              // self.mask.setCoords();
               self.scaleMask("on");
               self.maskScale = self.maskWidth / self.maskHeight;
             } else if(object.name == "image"){
+              self.image.scaledWidth = object.scaledWidth;
+              self.image.scaledHeight = object.scaledHeight;    
               self.image = object;
               self.image.toObject = (function(toObject) {
                 return function() {
@@ -1603,11 +1816,9 @@ export default {
                   });
                 };
               })(self.image.toObject);
-              self.image.name = 'watermark';
-              self.image.scaledWidth = self.image.getScaledWidth();
-              self.image.scaledHeight = self.image.getScaledHeight();    
-              self.scaleImage();
-              self.mousewheelImage("on");
+              self.image.name = 'image';
+              // self.scaleImage();
+              // self.mousewheelImage("on");
               self.imgScaledWidth = self.image.scaledWidth;
               self.imgScaledHeight = self.image.scaledHeight; 
               if(self.image.filters[0].brightness)
@@ -1640,14 +1851,19 @@ export default {
     }
   },
   mounted() {
-    var canvasDiv = document.getElementById("canvasDiv");
-    this.canvasWidth = canvasDiv.offsetWidth;
-    this.canvasHeight = canvasDiv.offsetHeight;
+    this.canvasWidth = window.innerWidth - 60;
+    this.canvasHeight = window.innerHeight - this.$refs.nav.$el.offsetHeight - 40;
+    window.addEventListener('mouseup', this.moveImageToCanvas);
   }
 };
 </script>
 
-<style>
+<style scoped>
+body {     
+  margin:0px ;
+  padding:0px;
+}
+
 #app {
   font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -1655,9 +1871,30 @@ export default {
   text-align: center;
   color: #2c3e50;
   min-width: 950px;
+  margin: 0;
+  color: #fff;
+  /* overflow-x: hidden; */
 }
 
-.el-row {
+.nav-box {
+  margin: 0 auto;
+  background-color: #606266;
+  border-bottom: 1px solid #303133;
+}
+
+.nav-button {
+  background-color: #606266;
+  border: none;
+  color: white;
+}
+
+.subNav-button {
+  background-color: #303133;
+  border-color: #606266;
+  color: white;
+}
+
+.nav-box .el-row {
   margin-top: 10px;
 }
 
@@ -1670,15 +1907,36 @@ export default {
   margin-left: 15px;
 }
 
-
 .filterSlider {
   /* width: 240px;
   margin-right: 20px; */
   width: 100%;
 }
 
+.canvasDiv {
+  padding: 0 20px;
+  margin: 0 auto;
+}
+
+.canvasDiv /deep/ .canvas-container{
+  margin: 0 auto;
+  height: 100%;
+}
+
 canvas {
   border: 1px dashed black;
   margin: 0 auto;
+}
+
+.filterSlider /deep/ .el-slider__runway {
+  background-color: #3c3e40;
+}
+
+.filterSlider /deep/ .el-slider__bar {
+  background-color: #fff;
+}
+
+.filterSlider /deep/ .el-slider__button {
+  border: 2px solid #393a3b;
 }
 </style>
