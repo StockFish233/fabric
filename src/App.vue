@@ -13,11 +13,11 @@
               </el-button>
             </el-button-group>
             <el-button-group>
-              <el-button @click="chooseClip()" class="nav-button" type="info" >裁剪</el-button>
-              <el-button @click="chooseFilters()" class="nav-button" type="info">色彩</el-button>
-              <el-button @click="drawer = true" class="nav-button" type="info">添加图片</el-button>
+              <el-button @click="chooseClip()" class="nav-button">裁剪</el-button>
+              <el-button @click="chooseFilters()" class="nav-button">色彩</el-button>
+              <el-button @click="drawer = true" class="nav-button">添加图片</el-button>
             </el-button-group>
-            <el-button @click="save()" class="nav-button" type="info">保存</el-button>
+            <el-button @click="save()" class="nav-button">保存</el-button>
           </el-row>
           <el-row class="nav-box" v-if="state == 'clip'">
             <el-row type="flex" justify="center">
@@ -32,7 +32,7 @@
                 </el-button-group>
               </el-col>
               <el-col :md="1">
-                <el-button @click="cancelClip()" class="subNav-button" type="info">取消</el-button>
+                <el-button @click="cancelClip()" class="subNav-button">取消</el-button>
               </el-col>
               <el-col :md="3">目前图片的宽&nbsp;&nbsp;
                 <el-input-number v-model="imgScaledWidth" class="inputStyle"  @change="changeImgScaledWidth()"
@@ -237,13 +237,16 @@
                 </el-button>
               </el-button-group>
             </el-col>
-            <el-col :md="2">
+            <el-col :md="1">
               <el-button @click="state=''" class="subNav-button" type="info">返回</el-button>
             </el-col>
             <el-col :md="2" class="filterName">水印透明度</el-col>
             <el-col :md="2">
               <el-slider class="filterSlider" v-model=" opacityValue"
                 :min="0" :max="1" :step="0.001" @input="changeOpacity()" @change="saveJson()"></el-slider>
+            </el-col>
+            <el-col :md="1">
+              <el-button @click="deleteWatermark()" class="subNav-button" type="info">删除</el-button>
             </el-col>
           </el-row>
         </el-row>
@@ -664,6 +667,8 @@ export default {
         // this.refreshScale();
         this.canvas.renderAll();
         this.addMask();
+        debugger
+        this.saveJson();
         this.oldIndex = this.curIndex;
         this.imgScaledWidth = this.image.scaledWidth;
         this.imgScaledHeight = this.image.scaledHeight;
@@ -702,10 +707,8 @@ export default {
         this.mask.setCoords();
         this.mask.center();
         this.mask.setCoords();
-        this.mask.width = this.image.getScaledWidth();
-        this.mask.height = this.image.getScaledHeight();
-        this.maskWidth = this.mask.getScaledWidth();
-        this.maskHeight = this.mask.getScaledHeight();
+        this.maskWidth = this.mask.width = this.image.getScaledWidth();
+        this.maskHeight = this.mask.height = this.image.getScaledHeight();
         if (this.maskWidth > this.canvasWidth)
           this.maskWidth = this.canvas.width;
         this.mask.set("width", this.maskWidth);
@@ -722,7 +725,7 @@ export default {
         })(this.mask.toObject);
         this.canvas.add(this.mask);
         this.canvas.setActiveObject(this.image);
-        this.maskScale = this.imgScale;
+        this.maskScale = this.maskWidth / this.maskHeight;
       } else if (this.value == "circle") {
         var min;
         if (this.image.getScaledWidth() > this.image.getScaledHeight()) {
@@ -773,7 +776,9 @@ export default {
       this.maskHeight = this.mask.getScaledHeight();
       this.newImgScaleX = 1;
       this.newImgScaleY = 1;
-      this.saveJson();
+      this.moveImageInMask();
+    },
+    moveImageInMask(){
       var self = this;
       this.mask.on({
         mousedown: e => { 
@@ -1590,33 +1595,34 @@ export default {
       for (var i = 0; i < this.watermarkGroup.length; i++) {
         this.watermarkGroup[i].btn.set("visible", false);
       }
-      btn = new fabric.Image(delBtn, {
-        left: watermark.left + watermark.width - 30,
-        top: watermark.top + 10,
-        width: 20,
-        height: 20,
-        visible: true,
-        hasControls: false,
-        lockMovementX: true,
-        lockMovementY: true,
-        lockScalingFlip: true
-      });
-      btn.toObject = (function(toObject) {
-        return function() {
-          return fabric.util.object.extend(toObject.call(this), {
-            name: this.name
-          });
-        };
-      })(btn.toObject);
-      btn.setCoords();
-      this.canvas.add(watermark, btn);
+      // btn = new fabric.Image(delBtn, {
+      //   left: watermark.left + watermark.width - 30,
+      //   top: watermark.top + 10,
+      //   width: 20,
+      //   height: 20,
+      //   visible: true,
+      //   hasControls: false,
+      //   lockMovementX: true,
+      //   lockMovementY: true,
+      //   lockScalingFlip: true
+      // });
+      // btn.toObject = (function(toObject) {
+      //   return function() {
+      //     return fabric.util.object.extend(toObject.call(this), {
+      //       name: this.name
+      //     });
+      //   };
+      // })(btn.toObject);
+      // btn.setCoords();
+      // this.canvas.add(watermark, btn);
+      this.canvas.add(watermark);
       watermark.name = "watermark";
-      btn.name = "btn";
+      // btn.name = "btn";
       this.canvas.setActiveObject(watermark);
       this.canvas.renderAll();
-      this.watermarkGroup.push({ watermark: watermark, btn: btn });
-      this.clickBtn(watermark, btn);
-      this.watermarkListener(watermark, btn);
+      this.watermarkGroup.push({ watermark: watermark});
+      // this.clickBtn(watermark);
+      this.watermarkListener(watermark);
       this.saveJson();
       this.state = "watermark";
     },
@@ -1629,91 +1635,109 @@ export default {
       }
     },
     // 监听水印
-    watermarkListener(watermark, btn) {
+    watermarkListener(watermark) {
       watermark.on({
         scaling: e => {
-          btn.set("top", watermark.top + 10);
-          btn.set("left", watermark.left + watermark.getScaledWidth() - 30);
-          btn.setCoords();
-          this.canvas.renderAll();  
+          // btn.set("top", watermark.top + 10);
+          // btn.set("left", watermark.left + watermark.getScaledWidth() - 30);
+          // btn.setCoords();
+          // this.canvas.renderAll();  
         },
         mousedown: e => {
           this.state = "watermark";
           this.opacityValue = watermark.opacity;
-          if (
-            !(btn.left <= e.pointer.x && e.pointer.x <= btn.left + btn.width &&
-              btn.top <= e.pointer.y && e.pointer.y <= btn.top + btn.height)
-          ) {
-            for (var i = 0; i < this.watermarkGroup.length; i++) {
-              this.watermarkGroup[i].btn.set("visible", false);
-            }
-          } else {
-            for (var i = 0; i < this.watermarkGroup.length; i++) {
-              if (this.watermarkGroup[i].watermark == watermark) {
-                this.watermarkGroup.splice(i, 1);
-                break;
-              }
-            }
-            this.canvas.remove(watermark, btn);
-            this.saveJson();
-            if(this.watermarkGroup.length == 0){
-              this.state = '';
-            }
-          }
-          this.canvas.renderAll();
+          this.canvas.setActiveObject(watermark);
+          // if (
+          //   !(btn.left <= e.pointer.x && e.pointer.x <= btn.left + btn.width &&
+          //     btn.top <= e.pointer.y && e.pointer.y <= btn.top + btn.height)
+          // ) {
+          //   for (var i = 0; i < this.watermarkGroup.length; i++) {
+          //     this.watermarkGroup[i].btn.set("visible", false);
+          //   }
+          // } else {
+          //   for (var i = 0; i < this.watermarkGroup.length; i++) {
+          //     if (this.watermarkGroup[i].watermark == watermark) {
+          //       this.watermarkGroup.splice(i, 1);
+          //       break;
+          //     }
+          //   }
+          //   this.canvas.remove(watermark, btn);
+          //   this.saveJson();
+          //   if(this.watermarkGroup.length == 0){
+          //     this.state = '';
+          //   }
+          // }
+          // this.canvas.renderAll();
         },
         mouseup: e => {
           // this.opacityValue = watermark.opacity;
-          if (!(watermark.left + watermark.getScaledWidth() - 30 < e.pointer.x &&
-            e.pointer.x < watermark.left + watermark.getScaledWidth() - 10 &&
-            watermark.top + 10 < e.pointer.y && e.pointer.y < watermark.top + 30)) {
-            var pointer = watermark.aCoords.tr;
-            if(watermark.angle <= 30 && watermark.angle >= 0){
-              btn.set("top", pointer.y + 10);
-              btn.set("left", pointer.x - 30);
-            }else if(watermark.angle <= 90 && watermark.angle > 30){
-              btn.set("top", pointer.y - 15);
-              btn.set("left", pointer.x - 30);
-            }else if(watermark.angle <= 120 && watermark.angle > 90){
-              btn.set("top", pointer.y - 30);
-              btn.set("left", pointer.x - 30);
-            }else if(watermark.angle <= 150 && watermark.angle > 120){
-              btn.set("top", pointer.y - 30);
-              btn.set("left", pointer.x - 15);
-            }else if(watermark.angle <= 180 && watermark.angle > 150){
-              btn.set("top", pointer.y - 30);
-              btn.set("left", pointer.x + 10);
-            }else if(watermark.angle <= 210 && watermark.angle > 180){
-              btn.set("top", pointer.y - 15);
-              btn.set("left", pointer.x + 10);
-            }else if(watermark.angle <= 245 && watermark.angle > 210){
-              btn.set("top", pointer.y - 15);
-              btn.set("left", pointer.x + 10);
-            }else if(watermark.angle <= 270 && watermark.angle > 245){
-              btn.set("top", pointer.y + 10);
-              btn.set("left", pointer.x + 10);
-            }else if(watermark.angle <= 300 && watermark.angle > 270){
-              btn.set("top", pointer.y + 15);
-              btn.set("left", pointer.x + 10);
-            }else if(watermark.angle <= 360 && watermark.angle > 300){
-              btn.set("top", pointer.y + 10);
-              btn.set("left", pointer.x - 15);
-            }
-            console.log(watermark.angle);
-          }
-          btn.set("visible", true);
-          btn.setCoords();
-          this.canvas.renderAll();
+          // if (!(watermark.left + watermark.getScaledWidth() - 30 < e.pointer.x &&
+          //   e.pointer.x < watermark.left + watermark.getScaledWidth() - 10 &&
+          //   watermark.top + 10 < e.pointer.y && e.pointer.y < watermark.top + 30)) {
+          //   var pointer = watermark.aCoords.tr;
+          //   if(watermark.angle <= 30 && watermark.angle >= 0){
+          //     btn.set("top", pointer.y + 10);
+          //     btn.set("left", pointer.x - 30);
+          //   }else if(watermark.angle <= 90 && watermark.angle > 30){
+          //     btn.set("top", pointer.y - 15);
+          //     btn.set("left", pointer.x - 30);
+          //   }else if(watermark.angle <= 120 && watermark.angle > 90){
+          //     btn.set("top", pointer.y - 30);
+          //     btn.set("left", pointer.x - 30);
+          //   }else if(watermark.angle <= 150 && watermark.angle > 120){
+          //     btn.set("top", pointer.y - 30);
+          //     btn.set("left", pointer.x - 15);
+          //   }else if(watermark.angle <= 180 && watermark.angle > 150){
+          //     btn.set("top", pointer.y - 30);
+          //     btn.set("left", pointer.x + 10);
+          //   }else if(watermark.angle <= 210 && watermark.angle > 180){
+          //     btn.set("top", pointer.y - 15);
+          //     btn.set("left", pointer.x + 10);
+          //   }else if(watermark.angle <= 245 && watermark.angle > 210){
+          //     btn.set("top", pointer.y - 15);
+          //     btn.set("left", pointer.x + 10);
+          //   }else if(watermark.angle <= 270 && watermark.angle > 245){
+          //     btn.set("top", pointer.y + 10);
+          //     btn.set("left", pointer.x + 10);
+          //   }else if(watermark.angle <= 300 && watermark.angle > 270){
+          //     btn.set("top", pointer.y + 15);
+          //     btn.set("left", pointer.x + 10);
+          //   }else if(watermark.angle <= 360 && watermark.angle > 300){
+          //     btn.set("top", pointer.y + 10);
+          //     btn.set("left", pointer.x - 15);
+          //   }
+          //   console.log(watermark.angle);
+          // }
+          // btn.set("visible", true);
+          // btn.setCoords();
+          // this.canvas.renderAll();
           this.saveJson();
         },
         mouseout: e => {
-          btn.set("visible", false);
+          // btn.set("visible", false);
         },
         selected: e => {
           this.state = "watermark";
           this.opacityValue = watermark.opacity;
         },
       });
+    },
+    deleteWatermark(){
+      var object = this.canvas.getActiveObject();
+      if(object.name == 'watermark'){
+        this.state = "";
+        for (var i = 0; i < this.watermarkGroup.length; i++) {
+          if (this.watermarkGroup[i].watermark == object) {
+            this.watermarkGroup.splice(i, 1);
+            break;
+          }
+        }
+        this.canvas.remove(object);
+        this.saveJson();
+        if(this.watermarkGroup.length == 0){
+          this.state = '';
+        }
+      }
     },
     clickBtn(watermark, btn) {
       btn.on({
@@ -1745,6 +1769,7 @@ export default {
     },
     // 回退
     returnBack(command) {
+      this.jsonList[this.curIndex] = this.canvas.toJSON();
       if (command == "previous") {
         this.curIndex -= 1;
       } else if (command == "next") {
@@ -1771,6 +1796,7 @@ export default {
                 watermark: watermark,
                 btn: new fabric.Image()
               });
+              self.watermarkListener(watermark);
             } else if (object.name == "btn") {
               var btn = object;
               btn.toObject = (function(toObject) {
@@ -1787,7 +1813,6 @@ export default {
               self.watermarkListener(temp.watermark, temp.btn);
               self.clickBtn(temp.watermark, temp.btn);
             } else if (object.name == "mask") {
-              debugger
               self.mask = object;
               self.mask.toObject = (function(toObject) {
                 return function() {
@@ -1799,8 +1824,16 @@ export default {
               self.mask.name = 'mask';
               self.maskWidth = self.mask.getScaledWidth();
               self.maskHeight = self.mask.getScaledHeight();
-              // self.mask.center();
-              // self.mask.setCoords();
+              self.mask.set({
+                lockMovementX: true,
+                lockMovementY: true,
+                lockRotation: true,
+                hasControls: false,
+              })
+              self.mask.setCoords();
+              self.mask.center();
+              self.mask.setCoords();
+              self.moveImageInMask();
               self.scaleMask("on");
               self.maskScale = self.maskWidth / self.maskHeight;
             } else if(object.name == "image"){
@@ -1888,14 +1921,26 @@ body {
   color: white;
 }
 
+.nav-button:hover{
+  background-color: #3c3e40
+}
+
 .subNav-button {
   background-color: #303133;
   border-color: #606266;
   color: white;
 }
 
+.subNav-button:hover {
+  background-color: #434447;
+}
+
 .nav-box .el-row {
   margin-top: 10px;
+}
+
+.nav-box /deep/ .el-button:active {
+  background-color: #53555c !important;
 }
 
 .inputStyle {
