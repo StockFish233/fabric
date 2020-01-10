@@ -3,7 +3,7 @@
     <el-row style="margin: 0;">
       <el-col :md="24">
         <el-row id="nav" ref="nav">
-          <el-row class="nav-box" style="margin: 0;"  v-if="state == ''">
+          <el-row class="nav-box" style="margin: 0;width: 100%"  v-if="state == ''">
             <el-button-group>
               <el-button icon="el-icon-refresh-left" :disabled="returnPrevious" type="info"
                 class="nav-button" @click="returnBack('previous')">
@@ -280,8 +280,9 @@ export default {
   name: "App",
   data() {
     return {
-      canvasWidth: 1500,
-      canvasHeight: 864,
+      timer: false,
+      canvasWidth: document.body.clientWidth - 60,
+      canvasHeight: document.body.clientHeight - 175,
       canvasLeft: 0,
       canvasTop: 175,
       imgSrc: "../static/douyi.jpg",
@@ -500,7 +501,7 @@ export default {
         this.mousewheelImage("on");
         this.scaleMask("on");
       }
-    }
+    },
   },
   methods: {
     init() {
@@ -667,7 +668,6 @@ export default {
         // this.refreshScale();
         this.canvas.renderAll();
         this.addMask();
-        debugger
         this.saveJson();
         this.oldIndex = this.curIndex;
         this.imgScaledWidth = this.image.scaledWidth;
@@ -702,8 +702,7 @@ export default {
           lockMovementX: true,
           lockMovementY: true,
           // selectable: false,
-        });
-        debugger       
+        });      
         this.mask.setCoords();
         this.mask.center();
         this.mask.setCoords();
@@ -1881,12 +1880,40 @@ export default {
         } 
       );
       this.canvas.renderAll();
+    },
+    getCanvasSize(){
+      console.log("window change");
+      var self = this;
+      this.$nextTick(() => {
+        var nav = document.getElementById("nav");
+        self.canvasWidth = window.innerWidth - 60;
+        self.canvasHeight = window.innerHeight - nav.clientHeight - 40;
+        self.canvas.setWidth(self.canvasWidth);
+        self.canvas.setHeight(self.canvasHeight);
+        // self.canvas.renderAll();
+        self.image.clipPath.set({
+          width: self.canvas.width,
+          height: self.canvas.height
+        })
+        self.refreshScale();
+        var that = self;
+        self.image.setSrc(self.image.getSrc(), function(){
+          
+          that.canvas.renderAll();
+        })
+        self.image.setCoords();
+        self.image.center();
+        self.image.setCoords();
+        self.canvas.renderAll();
+      })
     }
   },
   mounted() {
     this.canvasWidth = window.innerWidth - 60;
     this.canvasHeight = window.innerHeight - this.$refs.nav.$el.offsetHeight - 40;
     window.addEventListener('mouseup', this.moveImageToCanvas);
+    window.addEventListener('resize', this.getCanvasSize);
+    
   }
 };
 </script>
@@ -1903,7 +1930,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  min-width: 950px;
+  /* min-width: 950px; */
   margin: 0;
   color: #fff;
   /* overflow-x: hidden; */
