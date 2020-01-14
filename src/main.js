@@ -17,7 +17,10 @@ import {
   Slider,
   Upload,
   ColorPicker,
-  Drawer} from 'element-ui'
+  Drawer,
+  Menu,
+  Submenu,
+  MenuItem,} from 'element-ui'
 
 Vue.config.productionTip = false
 Vue.use(fabric)
@@ -33,6 +36,10 @@ Vue.use(Slider)
 Vue.use(Upload)
 Vue.use(ColorPicker)
 Vue.use(Drawer)
+Vue.use(Menu)
+Vue.use(MenuItem)
+Vue.use(Submenu)
+
 
 /* eslint-disable no-new */
 new Vue({
