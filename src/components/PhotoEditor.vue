@@ -3,13 +3,14 @@
     <el-row style="margin: 0;" class="content">
       <el-col :md="24">
         <el-row id="nav">
-          <el-row class="nav-box" style="margin: 0;width: 100%" v-if="state == ''">
-            <el-button-group>
+          <el-row class="nav-box" type="flex" justify="center" style="margin: 0 auto;width: 100%;" v-if="state == ''">
+            <div style="width: 450px;float: left">
+            <el-button-group style="margin: 0 auto;">
               <el-button icon="el-icon-refresh-left" :disabled="returnPrevious" 
-                class="nav-button" @click="returnBack('previous')">
+                class="left-button" @click="returnBack('previous')">
               </el-button>
               <el-button icon="el-icon-refresh-right" :disabled="returnNext" 
-                class="nav-button" @click="returnBack('next')">
+                class="left-button" @click="returnBack('next')">
               </el-button>
             </el-button-group>
             <el-button-group>
@@ -17,7 +18,11 @@
               <el-button @click="chooseFilters()" class="nav-button">色彩</el-button>
               <el-button @click="drawer = true" class="nav-button">添加图片</el-button>
             </el-button-group>
-            <el-button @click="save()" class="nav-button">保存</el-button>
+            <el-button @click="save()" class="right-button">保存</el-button>
+            </div>
+            <div style="margin-top: 10px;float：right">
+            <el-switch v-model="adaptToWindow" active-text="适应窗口的变化" ></el-switch>
+            </div>
           </el-row>
           <el-row class="sub-nav-box" v-if="state == 'clip'">
             <el-row type="flex" justify="center" >
@@ -237,9 +242,7 @@ export default {
     return {
       canvasWidth: document.body.clientWidth - 60,
       canvasHeight: document.body.clientHeight - 175,
-      canvasLeft: 0,
-      canvasTop: 175,
-      // imgSrc: "",
+      adaptToWindow: true,
       imgSrc_clip: "",
       btnSrc: "../static/del.png",
       shapes: [
@@ -367,10 +370,12 @@ export default {
   },
   watch: {
     clientWidth: function() {
-      this.getCanvasSize();
+      if(this.adaptToWindow)
+        this.getCanvasSize();
     },
     clientHeight: function() {
-      this.getCanvasSize();
+      if(this.adaptToWindow)
+        this.getCanvasSize();
     },
     maskWidth: function() {
       // if (this.maskWidth > this.image.getScaledWidth())
@@ -621,22 +626,25 @@ export default {
     // 裁剪相关方法
     chooseClip(){
       this.state = "clip";
+      debugger
       this.$nextTick(() => {
         var nav = document.getElementById("nav");
+        var editor = document.getElementById("editor");
         this.canvasHeight = editor.clientHeight - nav.clientHeight - 40;
         this.canvas.setHeight(this.canvasHeight);
         // this.refreshScale();
         this.image.setCoords();
         this.image.center();
         this.image.setCoords();
-        this.canvas.renderAll();
+        this.mask.center();
+        this.mask.setCoords();
+      })
         this.addMask();
+        this.canvas.renderAll();
         this.saveJson();
         this.oldIndex = this.curIndex;
         this.imgScaledWidth = this.image.scaledWidth;
         this.imgScaledHeight = this.image.scaledHeight;
-        console.log("当前图片的宽高：" + this.imgScaledWidth + "," + this.imgScaledHeight);
-      })
     },
     addMask() {
       if (this.mask) {
@@ -649,7 +657,7 @@ export default {
           originX: "left",
           originY: "top",
           stroke: "#F5A623",
-          strokeWidth: 5,
+          strokeWidth: 3,
           cornerColor: "#F5A623",
           fill: "rgba(255, 255, 255, 0)",
           // fill: "#757575",
@@ -664,7 +672,7 @@ export default {
           hasControls: false,
           lockMovementX: true,
           lockMovementY: true,
-          // selectable: false,
+          selectable: false,
         });      
         this.mask.setCoords();
         this.mask.center();
@@ -704,12 +712,12 @@ export default {
           left: this.image.left,
           top: this.image.top,
           stroke: "#F5A623",
-          strokeWidth: 5,
+          strokeWidth: 3,
           lockRotation: true,
           hasControls: false,
           lockMovementX: true,
           lockMovementY: true,
-          // selectable: false,
+          selectable: false,
         });
         this.mask.toObject = (function(toObject) {
           return function() {
@@ -850,6 +858,8 @@ export default {
       this.canvas.remove(this.mask);  
       this.oldIndex = 0;
       this.$nextTick(() => {
+        var nav = document.getElementById("nav");
+        var editor = document.getElementById("editor");
         this.canvasHeight = editor.clientHeight - nav.clientHeight - 40;
         this.canvas.setHeight(this.canvasHeight);
         this.refreshScale();
@@ -915,7 +925,9 @@ export default {
     toClip() {
       this.state = "";
       this.$nextTick(() => {
-        this.canvasHeight =  window.innerHeight - nav.clientHeight - 40;
+        var nav = document.getElementById("nav");
+        var editor = document.getElementById("editor");
+        this.canvasHeight = editor.clientHeight - nav.clientHeight - 40;
         this.canvas.setHeight(this.canvasHeight);
         this.canvas.renderAll();
       })
@@ -1317,8 +1329,13 @@ export default {
       this.oldIndex = this.curIndex;
       this.state='filters';
       this.$nextTick(() => {
+        var nav = document.getElementById("nav");
+        var editor = document.getElementById("editor");
         this.canvasHeight = editor.clientHeight - nav.clientHeight - 40;
         this.canvas.setHeight(this.canvasHeight);
+        this.image.setCoords();
+        this.image.center();
+        this.image.setCoords();
       })
     },
     toApplyFilters(){
@@ -1363,6 +1380,8 @@ export default {
       this.canvas.remove(this.mask);
       this.oldIndex = 0;
       this.$nextTick(() => {
+        var nav = document.getElementById("nav");
+        var editor = document.getElementById("editor");
         this.canvasHeight = editor.clientHeight - nav.clientHeight - 40;
         this.canvas.setHeight(this.canvasHeight);
         this.refreshScale();
@@ -1372,7 +1391,9 @@ export default {
     saveFilters(){
       this.state = "";
       this.$nextTick(() => {
-        this.canvasHeight =  window.innerHeight - nav.clientHeight - 40;
+        var nav = document.getElementById("nav");
+        var editor = document.getElementById("editor");
+        this.canvasHeight = editor.clientHeight - nav.clientHeight - 40;
         this.canvas.setHeight(this.canvasHeight);
         this.brightness = this.brightnessValue;
         this.contrast = this.contrastValue;
@@ -1749,6 +1770,12 @@ export default {
               self.image.scaledHeight = object.scaledHeight;    
               self.image = object;
               self.image.name = 'image';
+              self.image.clipPath.set({
+                top: 0,
+                left: 0,
+                width: self.canvasWidth,
+                height: self.canvasHeight
+              });
               // self.scaleImage();
               // self.mousewheelImage("on");
               self.imgScaledWidth = self.image.scaledWidth;
@@ -1871,6 +1898,22 @@ export default {
   /* width: 100%; */
 }
 
+.left-button {
+  border: 0px;
+  background-color: #333538;
+  color: #fff;
+}
+
+.left-button:hover {
+  background-color: #434447;
+}
+
+.right-button {
+  border: 0px;
+  background-color: #333538;
+  color: #fff;
+}
+
 .sub-nav-box {
   margin: 0 auto;
   background-color: #606266;
@@ -1904,6 +1947,10 @@ export default {
 
 .nav-box /deep/ .el-button:active {
   background-color: #53555c !important;
+}
+
+.nav-box /deep/ .el-switch__label{
+  color: #fff;
 }
 
 .inputStyle {

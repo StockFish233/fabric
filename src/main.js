@@ -20,7 +20,8 @@ import {
   Drawer,
   Menu,
   Submenu,
-  MenuItem,} from 'element-ui'
+  MenuItem,
+  Switch,} from 'element-ui'
 
 Vue.config.productionTip = false
 Vue.use(fabric)
@@ -39,7 +40,7 @@ Vue.use(Drawer)
 Vue.use(Menu)
 Vue.use(MenuItem)
 Vue.use(Submenu)
-
+Vue.use(Switch)
 
 /* eslint-disable no-new */
 new Vue({
