@@ -1836,6 +1836,7 @@ export default {
     }
   },
   mounted() {
+    console.log("组件接收到的值" + this.clientWidth + "," + this.clientHeight);
     var nav = document.getElementById("nav");
     var editor = document.getElementById("editor");
     this.canvasWidth = editor.clientWidth - 60;
@@ -1844,6 +1845,9 @@ export default {
     // this.canvasHeight = this.clientHeight - nav.clientHeight - 40;
     window.addEventListener('mouseup', this.moveImageToCanvas);
     // window.addEventListener('resize', this.debounce(this.getCanvasSize, 500));
+  },
+  beforeDestroy() {
+    window.removeEventListener('mouseup', this.moveImageToCanvas);
   }
 };
 </script>

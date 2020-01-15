@@ -10,7 +10,7 @@
         <el-menu-item index="1">首页</el-menu-item>
         <el-menu-item index="2">无关紧要的导航</el-menu-item>
       </el-menu>
-    <div><el-button v-if="editVisible == false" @click="editVisible = true">打开编辑器</el-button></div>
+    <div v-if="editVisible == false" ><el-button @click="editVisible = true">打开编辑器</el-button></div>
     <!-- <el-row type="flex" justify="center">
     <el-col id="box" style="background-color:beige;margin:0 auto;" > -->
     <div v-if="editVisible == true" id="box" style="margin:0 auto;" >
@@ -31,7 +31,7 @@ export default {
   data(){
     return {
       activeIndex2: '1',
-      editVisible: true,
+      editVisible: false,
       imgSrc: "../static/douyi.jpg",
       clientWidth: 1920,
       clientHeight: 900,
@@ -62,6 +62,9 @@ export default {
     this.clientHeight = window.innerHeight - menu.clientHeight;
     console.log(this.clientWidth + "," + this.clientHeight);
     window.addEventListener('resize', this.debounce(this.getSize, 500));
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.debounce(this.getSize, 500));
   }
 };
 </script>
