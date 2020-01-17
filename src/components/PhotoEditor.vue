@@ -41,40 +41,44 @@
               <el-button icon="el-icon-lock" v-if="lockImageScale==true" class="subNav-button"
                 @click="lockImageScale=false"></el-button>
               <el-button icon="el-icon-unlock" v-else @click="lockImageScale=true" 
-                class="subNav-button"></el-button>
+                class="subNav-button unLock"></el-button>
               <span class="text">&nbsp;&nbsp;目前图片的高&nbsp;</span>
               <el-input-number v-model="imgScaledHeight" class="inputStyle"  @change="changeImgScaledHeight()"
                 :controls="false" :min="1" ></el-input-number>
               <span class="text">&nbsp;&nbsp;请选择裁剪形状&nbsp;</span>
-              <el-select v-model="value" style="width: 100px;">
+              <el-select v-model="maskShape" style="width: 100px;">
                 <el-option v-for="item in shapes"
                   :key="item.value" :label="item.label" :value="item.value"></el-option>
               </el-select>&nbsp;
               <el-button @click="toClip()" class="subNav-button">应用</el-button>
             </el-row>
             <el-row>
-              <el-row v-if="value == 'rect'">
-                <el-button-group>
-                  <el-button @click="clipImage('1:1')" class="subNav-button" type="info" >1:1</el-button>
-                  <el-button @click="clipImage('3:2')" class="subNav-button" type="info" >3:2</el-button>
-                  <el-button @click="clipImage('4:3')" class="subNav-button" type="info" >4:3</el-button>
-                  <el-button @click="clipImage('16:9')" class="subNav-button" type="info" >16:9</el-button>
-                  <el-button @click="clipImage('2:3')" class="subNav-button" type="info" >2:3</el-button>
-                  <el-button @click="clipImage('3:4')" class="subNav-button" type="info" >3:4</el-button>
-                  <el-button @click="clipImage('9:16')" class="subNav-button" type="info" >9:16</el-button>
-                </el-button-group>&nbsp;&nbsp;
+              <el-row v-if="maskShape == 'rect'">
+                <!-- <el-button-group>
+                  <el-button @click="resizeMask('1:1')" class="subNav-button" type="info" >1:1</el-button>
+                  <el-button @click="resizeMask('3:2')" class="subNav-button" type="info" >3:2</el-button>
+                  <el-button @click="resizeMask('4:3')" class="subNav-button" type="info" >4:3</el-button>
+                  <el-button @click="resizeMask('16:9')" class="subNav-button" type="info" >16:9</el-button>
+                  <el-button @click="resizeMask('2:3')" class="subNav-button" type="info" >2:3</el-button>
+                  <el-button @click="resizeMask('3:4')" class="subNav-button" type="info" >3:4</el-button>
+                  <el-button @click="resizeMask('9:16')" class="subNav-button" type="info" >9:16</el-button>
+                </el-button-group>&nbsp;&nbsp; -->
+                <el-select v-model="selectedScale" style="width: 120px;" @change="resizeMask(selectedScale)">
+                <el-option v-for="item in scaleList"
+                  :key="item" :label="item" :value="item"></el-option>
+                </el-select>&nbsp;
                 框的宽度&nbsp;
                 <el-input-number class="inputStyle" v-model="maskWidth"
                   :precision="0" :controls="false" :min="1" ></el-input-number>&nbsp;
                 <el-button icon="el-icon-lock" class="subNav-button" v-if="lockMaskScale==true" 
-                  @click="lockMaskScale=false" type="info"></el-button>
-                <el-button icon="el-icon-unlock" class="subNav-button" v-else 
-                  @click="lockMaskScale=true" type="info"></el-button>
+                  @click="lockMaskScale=false"></el-button>
+                <el-button icon="el-icon-unlock" class="subNav-button unLock" v-else 
+                  @click="lockMaskScale=true"></el-button>
                 &nbsp;框的高度&nbsp;
                 <el-input-number class="inputStyle" v-model="maskHeight" :precision="0"
                   :controls="false" :min="1" ></el-input-number>
               </el-row>
-              <el-row v-else-if="value == 'circle'">
+              <el-row v-else-if="maskShape == 'circle'">
                 框的半径&nbsp;
                 <el-input-number :precision="0" v-model="maskRadius"  :controls="false"
                   :min="1" :max="canvasHeight/2"></el-input-number>&nbsp;&nbsp;
@@ -89,7 +93,7 @@
               </el-button-group>
             </el-row>
           </el-row>
-          <el-row class="sub-nav-box" v-else-if="state == 'resetSize'"
+          <!-- <el-row class="sub-nav-box" v-else-if="state == 'resetSize'"
             type="flex"
             justify="center"
             style="margin:0 auto;margin-top:20px;">
@@ -140,7 +144,7 @@
               <el-button @click="changeAngle('y')">垂直翻转</el-button>
               <el-button @click="toRotate()">应用</el-button>
             </el-button-group>
-          </el-row>
+          </el-row> -->
           <el-row class="sub-nav-box" v-else-if="state == 'filters'">
             <el-row type="flex" justify="center">
               <span class="filterName">亮度</span>
@@ -181,7 +185,7 @@
               </el-button-group>&nbsp;&nbsp;
               <el-button @click="cancelFilters()" class="subNav-button">取消</el-button>
               <span class="filterName">模式</span>
-              <el-select v-model="blendModeValue" @change="changeBlend('mode')" style="width:200px;margin: 0 15px;">
+              <el-select v-model="blendModeValue" @change="changeBlend('mode')" style="width:120px;margin: 0 15px;">
                 <el-option v-for="item in blendModeList"
                   :key="item.value" :label="item.label" :value="item.value"></el-option>
               </el-select>
@@ -218,8 +222,7 @@
       </el-col>
       <el-drawer title="" :visible.sync="drawer" size="20%">
         <el-upload
-          class="upload-demo"
-          action="https://jsonplaceholder.typicode.com/posts/"
+          :action="postUrl"
           :on-preview="handlePreview"
           :on-remove="handleRemove"
           :file-list="imageList"
@@ -240,11 +243,15 @@ export default {
   },
   data() {
     return {
-      canvasWidth: document.body.clientWidth - 60,
-      canvasHeight: document.body.clientHeight - 175,
+      // 页面样式、逻辑相关变量
+      state: "", // 记录正在进行的编辑模式
       adaptToWindow: true,
-      imgSrc_clip: "",
-      btnSrc: "../static/del.png",
+      drawer: false, // 右侧抽屉可见性
+      postUrl: "https://jsonplaceholder.typicode.com/posts/",
+      imageList: [
+        { name: "圣诞帽.jpg", url: "../static/圣诞帽.png" },
+        { name: "圣诞花环.png", url: "../static/圣诞花环.png" }
+      ],
       shapes: [
         {
           value: "rect",
@@ -255,27 +262,37 @@ export default {
           label: "圆形"
         }
       ],
-      imageList: [
-        { name: "圣诞帽.jpg", url: "../static/圣诞帽.png" },
-        { name: "圣诞花环.png", url: "../static/圣诞花环.png" }
+      maskShape: "rect", // 裁剪框的形状值,默认为矩形
+      selectedScale: "原图比例",
+      scaleList:[
+        "原图比例", "1:1", "3:2", "4:3", "16:9", "2:3", "3:4", "9:16"
       ],
-      drawer: false, // 右侧抽屉可见性
+
+      // 画布交互的相关变量
+      canvasWidth: document.body.clientWidth - 60,
+      canvasHeight: document.body.clientHeight - 175,
+      imgSrc_clip: "",
+      btnSrc: "../static/del.png",
+
       jsonList: [], // 用json记录图片修改后的数据
       curIndex: -1, // 记录当前图片存在数组中的索引
       oldIndex: 0, // 记录图片更改前存在数组中的索引
       returnPrevious: true, // 上一步按钮禁用状态
       returnNext: true, // 下一步按钮禁用状态
-      value: "rect", // 裁剪框的形状值,默认为矩形
+      
       imgAngle: 0,
       curImgAngle: 0,
-      rotateMode: "", // 记录旋转模式
       rotating: false, // 记录是否旋转中
       moving: false, // 记录是否移动中
       toMoving: false, // 在mask中点击移动图片
       width: 0, // 记录当前点与顶点的距离
       height: 0,
       scaling: false, // 记录是否缩放了
-      watermarkGroup: [],
+      mousewheeling: false, // 是否鼠标滚轮中标志
+      MAX_SIZE: 2, // 放大倍数
+
+      watermarkGroup: [], // 存放水印的数组
+      opacityValue: 0.5, // 水印不透明度
       image: new fabric.Image(),
       imgTop: 0,
       imgLeft: 0,
@@ -298,9 +315,7 @@ export default {
       newImgHeight: 0,
       newImgScaleX: 0,
       newImgScaleY: 0,
-      state: "", // 记录正在进行的编辑模式
-      mousewheeling: false, // 是否鼠标滚轮中标志
-      MAX_SIZE: 2, // 放大倍数
+
       brightness: 0, // 图片亮度
       brightnessValue: 0, // 图片亮度修改后的值
       contrast: 0,
@@ -365,7 +380,6 @@ export default {
       gammaRedValue: 1,
       gammaGreenValue: 1,
       gammaBlueValue: 1,
-      opacityValue: 0.5, // 水印不透明度
     };
   },
   watch: {
@@ -399,7 +413,11 @@ export default {
         this.maskHeight = this.canvas.height;
       this.mask.set("height", this.maskHeight);
       if (this.lockMaskScale){
-        this.maskWidth = this.maskHeight * this.maskScale;
+        if(this.maskHeight * this.maskScale > this.imgScaledWidth){
+          this.maskWidth = this.imgScaledWidth;
+        }else{
+          this.maskWidth = this.maskHeight * this.maskScale;
+        }
         this.mask.set("width", this.maskWidth);
       }
       this.mask.setCoords();
@@ -423,7 +441,7 @@ export default {
       this.mask.set("radius", this.maskRadius);
       this.canvas.renderAll();
     },
-    value: function() {
+    maskShape: function() {
       this.image.clipPath = new fabric.Rect({
         top: 0,
         left: 0,
@@ -626,7 +644,7 @@ export default {
     // 裁剪相关方法
     chooseClip(){
       this.state = "clip";
-      debugger
+      this.selectedScale = "原图比例";
       this.$nextTick(() => {
         var nav = document.getElementById("nav");
         var editor = document.getElementById("editor");
@@ -639,18 +657,18 @@ export default {
         this.mask.center();
         this.mask.setCoords();
       })
-        this.addMask();
-        this.canvas.renderAll();
-        this.saveJson();
-        this.oldIndex = this.curIndex;
-        this.imgScaledWidth = this.image.scaledWidth;
-        this.imgScaledHeight = this.image.scaledHeight;
+      this.addMask();
+      this.canvas.renderAll();
+      this.saveJson();
+      this.oldIndex = this.curIndex;
+      this.imgScaledWidth = this.image.scaledWidth;
+      this.imgScaledHeight = this.image.scaledHeight;
     },
     addMask() {
       if (this.mask) {
         this.canvas.remove(this.mask);
       }
-      if (this.value == "rect") {
+      if (this.maskShape == "rect") {
         this.mask = new fabric.Rect({
           left: this.image.left,
           top: this.image.top,
@@ -696,7 +714,7 @@ export default {
         this.canvas.add(this.mask);
         this.canvas.setActiveObject(this.image);
         this.maskScale = this.maskWidth / this.maskHeight;
-      } else if (this.value == "circle") {
+      } else if (this.maskShape == "circle") {
         var min;
         if (this.image.getScaledWidth() > this.image.getScaledHeight()) {
           min = this.image.getScaledHeight();
@@ -756,6 +774,9 @@ export default {
             self.toMoving = true;
             self.width = e.pointer.x - self.image.left;
             self.height = e.pointer.y - self.image.top;
+            console.log("now point ("+ e.pointer.x + "," + e.pointer.y + ")");
+            console.log("image point ("+ self.image.left + "," + self.image.top + ")");
+            console.log("width: "+ self.width + " , height: " + self.height);
             self.canvas.setActiveObject(self.image);
           }else{
             self.toMoving = false;
@@ -833,14 +854,16 @@ export default {
       if(event.x > this.canvas._offset.left && event.x < this.canvas._offset.left + this.canvas.width &&
         event.y > this.canvas._offset.top && event.y < this.canvas._offset.top + this.canvas.height){    
         if(this.toMoving){
+          debugger
           console.log("move image");
-          console.log("now point ("+ event.x + "," + event.y + ")");
-          this.imgLeft = event.x - this.width;
-          this.imgTop = event.y - this.height;
+          console.log("now point ("+ event.offsetX + "," + event.offsetY + ")");
+          this.imgLeft = event.offsetX - this.width;
+          this.imgTop = event.offsetY - this.height;
           this.image.set('left', this.imgLeft);
           this.image.set('top', this.imgTop);
           this.image.setCoords();
           console.log("image point ("+ this.image.left + "," + this.image.top + ")");
+          console.log("width: "+ this.width + " , height: " + this.height);
           this.canvas.renderAll();
           this.saveJson();
           this.toMoving = false;
@@ -867,7 +890,7 @@ export default {
       })
     },
     // 选择裁剪框尺寸
-    clipImage(command) {
+    resizeMask(command) {
       this.lockMaskScale = true;
       var min, max;
       if (this.image.getScaledWidth() > this.image.getScaledHeight()) {
@@ -882,7 +905,9 @@ export default {
         this.mask.set("width", min / this.mask.scaleX);
         this.maskScale = 1;
       } else{
-        if (command == "3:2") {
+        if( command == "原图比例"){
+          this.maskScale = this.imgScale;
+        }else if (command == "3:2") {
           this.maskScale = 3/2;
         } else if (command == "4:3") {
           this.maskScale = 4 / 3;
@@ -895,21 +920,31 @@ export default {
         } else if (command == "9:16") {
           this.maskScale = 9/16;
         }
-        if (this.imgScale > this.maskScale) {
-          if (this.imgScale > 1) {
+        if(this.maskScale > 1){
+          if (this.imgScale > this.maskScale) {
             this.mask.set("height", min / this.mask.scaleY);
-            this.mask.set("width", (this.maskScale * min) / this.mask.scaleX);
+            this.mask.set("width", this.maskScale * min);
+          } else {
+            if (this.imgScale >= 1) {
+              this.mask.set("height", min / this.mask.scaleY);
+              this.mask.set("width", this.maskScale * this.mask.height);
+            } else {
+              this.mask.set("width", min / this.mask.scaleX);
+              this.mask.set("height", this.mask.width / this.maskScale);
+            }
+          }
+        }else if(this.maskScale < 1){
+          if (this.imgScale > this.maskScale) {
+            if (this.imgScale >= 1) {
+              this.mask.set("height", min / this.mask.scaleY);
+              this.mask.set("width", this.maskScale * this.mask.height);
+            } else {
+              this.mask.set("width", min / this.mask.scaleX);
+              this.mask.set("height", this.mask.width / this.maskScale);
+            }
           } else {
             this.mask.set("width", min / this.mask.scaleX);
-            this.mask.set("height", (min / this.maskScale) / this.mask.scaleY);
-          }
-        } else {
-          if (this.imgScale >= 1) {
-            this.mask.set("width", max / this.mask.scaleX);
-            this.mask.set("height", this.mask.width / this.maskScale);
-          } else {
-            this.mask.set("height", max / this.mask.scaleY);
-            this.mask.set("width", this.maskScale * this.mask.height);
+              this.mask.set("height", this.mask.width / this.maskScale);
           }
         }
       }
@@ -938,7 +973,7 @@ export default {
       this.newImgWidth = this.maskWidth;
       this.newImgHeight = this.maskHeight;
       var radius = this.mask.radius;
-      if (this.value == "rect") {
+      if (this.maskShape == "rect") {
         this.image.clipPath.set({
           top: this.newImgTop,
           left: this.newImgLeft,
@@ -953,7 +988,7 @@ export default {
           width: this.newImgWidth,
           height: this.newImgHeight
         });
-      } else if (this.value == "circle") {
+      } else if (this.maskShape == "circle") {
         this.image.clipPath = new fabric.Circle({
           top: this.newImgTop,
           left: this.newImgLeft,
@@ -999,10 +1034,10 @@ export default {
       if (command == "on") {
         this.mask.on({
           scaling: e => {
-            if (this.value == "rect") {
+            if (this.maskShape == "rect") {
               this.maskWidth = this.mask.getScaledWidth();
               this.maskHeight = this.mask.getScaledHeight();
-            } else if (this.value == "circle") {
+            } else if (this.maskShape == "circle") {
               this.maskRadius = this.mask.getRadiusX();
               this.maskWidth = this.mask.getScaledWidth();
               this.maskHeight = this.mask.getScaledHeight();
@@ -1032,6 +1067,8 @@ export default {
             var delta = -(opt && opt.e && opt.e.deltaY) || 100;
             var width = (oriWidth = this.image.getScaledWidth());
             var height = (oriHeight = this.image.getScaledHeight());
+            // var width = (oriWidth = this.imgScaledWidth);
+            // var height = (oriHeight = this.imgScaledHeight);
             var oriLeft = this.image.get("left");
             var oriTop = this.image.get("top");
             // var clipWidth = this.imgScaledWidth;
@@ -1202,8 +1239,6 @@ export default {
     // 选择旋转方式
     changeAngle(command) {
       this.curImgAngle = this.image.angle;
-      this.rotateMode = command;
-      console.log("图片原本的角度为：" + this.imgAngle);
       if (command == "left") {
         if (this.curImgAngle == 0) this.curImgAngle = 360;
         this.curImgAngle -= 90;
@@ -1252,12 +1287,13 @@ export default {
         this.imgWidth = this.image.height;
         if (this.imgWidth > this.canvas.width) {
           this.image.scaleToHeight(this.canvas.width);
-          console.log("图片适应画布的宽" + this.image.getScaledWidth());
         }
         if (this.image.getScaledWidth() >= this.canvas.height) {
           this.image.scaleToWidth(this.canvas.height);
-          console.log("图片适应画布的高" + this.image.getScaledHeight());
         }
+        // var temp = this.image.getScaledWidth();
+        // this.imgScaledWidth = this.image.getScaledHeight();
+        // this.imgScaledHeight = temp;
         // this.mask.set("width", this.image.getScaledHeight());
         // this.mask.set("height", this.image.getScaledWidth());
       } else {
@@ -1266,10 +1302,9 @@ export default {
         // 重设图片的缩放比例
         this.image.scaleToWidth(this.imgScaledWidth);
         this.image.scaleToHeight(this.imgScaledHeight);
-        console.log(
-          this.image.getScaledWidth() + "," + this.image.getScaledHeight()
-        );
         this.refreshScale();
+        // this.imgScaledWidth = this.image.getScaledWidth();
+        // this.imgScaledHeight = this.image.getScaledHeight();
         // this.mask.set("width", this.image.getScaledWidth());
         // this.mask.set("height", this.image.getScaledHeight());
       }
@@ -1709,7 +1744,6 @@ export default {
     },
     // 保存图片数据
     saveJson() {   
-      console.log(this.image.scaledWidth + " " + this.image.scaledHeight);
       if (this.curIndex == 0 && this.jsonList.length > 1) {
         this.jsonList.splice(1);
       }
@@ -1719,7 +1753,7 @@ export default {
     },
     // 回退
     returnBack(command) {
-      this.jsonList[this.curIndex] = this.canvas.toJSON();
+      // this.jsonList[this.curIndex] = this.canvas.toJSON();
       if (command == "previous") {
         this.curIndex -= 1;
       } else if (command == "next") {
@@ -1734,6 +1768,13 @@ export default {
           if (object.name) {
             if (object.name == "watermark") {
               var watermark = object;
+              watermark.toObject = (function(toObject) {
+                return function() {
+                  return fabric.util.object.extend(toObject.call(this), {
+                    name: this.name
+                  });
+                };
+              })(watermark.toObject);
               watermark.name = 'watermark';
               self.watermarkGroup.push({
                 watermark: watermark,
@@ -1742,6 +1783,13 @@ export default {
               self.watermarkListener(watermark);
             } else if (object.name == "btn") {
               var btn = object;
+              btn.toObject = (function(toObject) {
+                  return function() {
+                    return fabric.util.object.extend(toObject.call(this), {
+                      name: this.name
+                    });
+                  };
+                })(btn.toObject);
               btn.name = 'btn';
               var temp = self.watermarkGroup[self.watermarkGroup.length - 1];
               temp.btn = btn;
@@ -1750,6 +1798,13 @@ export default {
               self.clickBtn(temp.watermark, temp.btn);
             } else if (object.name == "mask") {
               self.mask = object;
+              self.mask.toObject = (function(toObject) {
+                return function() {
+                  return fabric.util.object.extend(toObject.call(this), {
+                    name: this.name
+                  });
+                };
+              })(self.mask.toObject);
               self.mask.name = 'mask';
               self.maskWidth = self.mask.getScaledWidth();
               self.maskHeight = self.mask.getScaledHeight();
@@ -1758,6 +1813,7 @@ export default {
                 lockMovementY: true,
                 lockRotation: true,
                 hasControls: false,
+                selectable: false,
               })
               self.mask.setCoords();
               self.mask.center();
@@ -1769,6 +1825,15 @@ export default {
               self.image.scaledWidth = object.scaledWidth;
               self.image.scaledHeight = object.scaledHeight;    
               self.image = object;
+              self.image.toObject = (function(toObject) {
+                return function() {
+                  return fabric.util.object.extend(toObject.call(this), {
+                    name: this.name,
+                    scaledWidth: this.scaledWidth,
+                    scaledHeight: this.scaledHeight,
+                  });
+                };
+              })(self.image.toObject);
               self.image.name = 'image';
               self.image.clipPath.set({
                 top: 0,
@@ -1776,7 +1841,7 @@ export default {
                 width: self.canvasWidth,
                 height: self.canvasHeight
               });
-              // self.scaleImage();
+              self.scaleImage();
               // self.mousewheelImage("on");
               self.imgScaledWidth = self.image.scaledWidth;
               self.imgScaledHeight = self.image.scaledHeight; 
@@ -1898,8 +1963,14 @@ export default {
   /* width: 100%; */
 }
 
+.disable {
+  background-color: #53555a;
+  color: #777a80;
+  border: none;
+}
+
 .left-button {
-  border: 0px;
+  border: none;
   background-color: #333538;
   color: #fff;
 }
@@ -1933,11 +2004,15 @@ export default {
 
 .subNav-button {
   background-color: #303133;
-  border-color: #606266;
+  border: none;
   color: white;
 }
 
 .subNav-button:hover {
+  background-color: #434447;
+}
+
+.unLock {
   background-color: #434447;
 }
 
