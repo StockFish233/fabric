@@ -774,9 +774,6 @@ export default {
             self.toMoving = true;
             self.width = e.pointer.x - self.image.left;
             self.height = e.pointer.y - self.image.top;
-            console.log("now point ("+ e.pointer.x + "," + e.pointer.y + ")");
-            console.log("image point ("+ self.image.left + "," + self.image.top + ")");
-            console.log("width: "+ self.width + " , height: " + self.height);
             self.canvas.setActiveObject(self.image);
           }else{
             self.toMoving = false;
@@ -785,13 +782,11 @@ export default {
         },
         mouseup: e => {
           if(self.toMoving){
-            console.log("now point ("+ e.pointer.x + "," + e.pointer.y + ")");
             self.imgLeft = e.pointer.x - self.width;
             self.imgTop = e.pointer.y - self.height;
             self.image.set('left', self.imgLeft);
             self.image.set('top', self.imgTop);
             self.image.setCoords();
-            console.log("image point ("+ self.image.left + "," + self.image.top + ")");
             self.canvas.renderAll();
             self.toMoving = false;
             this.saveJson();
@@ -810,43 +805,8 @@ export default {
         },
         mousewheel: opt => {
           console.log("event mousewheel in mask");
-          if (opt && opt.e) {
-            opt.e.preventDefault();
-            opt.e.stopPropagation();
-          }
-          if (this.mousewheeling) return;
-          this.mousewheeling = true;
-          var oriWidth, oriHeight;
-          var delta = -(opt && opt.e && opt.e.deltaY) || 100;
-          var width = (oriWidth = this.image.getScaledWidth());
-          var height = (oriHeight = this.image.getScaledHeight());
-          var oriLeft = this.image.get("left");
-          var oriTop = this.image.get("top");
-          var clipWidth = this.mask.getScaledWidth();
-          var clipHeight = this.mask.getScaledHeight();
-          var ratio = width / height;
-          width = width + delta / 1;
-          height = height + delta / 1;
-          if (delta < 0 && (width <= clipWidth || height <= clipHeight)) {
-            if (clipWidth / clipHeight > ratio) {
-              this.image.scaleToWidth(clipWidth);
-            } else {
-              this.image.scaleToHeight(clipHeight);
-            }
-            this.keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight);
-          } else if (delta > 0 &&
-            (width >= this.image.get("width") * this.MAX_SIZE ||
-            height >= this.image.get("height") * this.MAX_SIZE)) {
-          } else {
-            this.image.scaleToWidth(width);
-            this.keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight);
-          }
-          this.image.setCoords();
-          this.mask.setCoords();
-          this.canvas.renderAll();
-          this.imgScaledWidth = this.image.getScaledWidth();
-          this.imgScaledHeight = this.image.getScaledHeight();
-          this.mousewheeling = false;
+          if(this.image.containsPoint(opt.e))
+            this.mousewheel(opt);
         }
       });
     },
@@ -854,16 +814,12 @@ export default {
       if(event.x > this.canvas._offset.left && event.x < this.canvas._offset.left + this.canvas.width &&
         event.y > this.canvas._offset.top && event.y < this.canvas._offset.top + this.canvas.height){    
         if(this.toMoving){
-          debugger
           console.log("move image");
-          console.log("now point ("+ event.offsetX + "," + event.offsetY + ")");
           this.imgLeft = event.offsetX - this.width;
           this.imgTop = event.offsetY - this.height;
           this.image.set('left', this.imgLeft);
           this.image.set('top', this.imgTop);
           this.image.setCoords();
-          console.log("image point ("+ this.image.left + "," + this.image.top + ")");
-          console.log("width: "+ this.width + " , height: " + this.height);
           this.canvas.renderAll();
           this.saveJson();
           this.toMoving = false;
@@ -1057,53 +1013,67 @@ export default {
         this.image.on({
           mousewheel: opt => {
             console.log("event mousewheel in image");
-            if (opt && opt.e) {
-              opt.e.preventDefault();
-              opt.e.stopPropagation();
-            }
-            if (this.mousewheeling) return;
-            this.mousewheeling = true;
-            var oriWidth, oriHeight;
-            var delta = -(opt && opt.e && opt.e.deltaY) || 100;
-            var width = (oriWidth = this.image.getScaledWidth());
-            var height = (oriHeight = this.image.getScaledHeight());
-            // var width = (oriWidth = this.imgScaledWidth);
-            // var height = (oriHeight = this.imgScaledHeight);
-            var oriLeft = this.image.get("left");
-            var oriTop = this.image.get("top");
-            // var clipWidth = this.imgScaledWidth;
-            // var clipHeight = this.imgScaledHeight;
-            var clipWidth = this.mask.getScaledWidth();
-            var clipHeight = this.mask.getScaledHeight();
-            var ratio = width / height;
-            width = width + delta / 1;
-            height = height + delta / 1;
-            if (delta < 0 && (width <= clipWidth || height <= clipHeight)) {
-              if (clipWidth / clipHeight > ratio) {
-                this.image.scaleToWidth(clipWidth);
-              } else {
-                this.image.scaleToHeight(clipHeight);
-              }
-              this.keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight);
-            } else if (delta > 0 &&
-              (width >= this.image.get("width") * this.MAX_SIZE ||
-                height >= this.image.get("height") * this.MAX_SIZE)) {
-            } else {
-              this.image.scaleToWidth(width);
-              this.keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight);
-            }
-            this.image.setCoords();
-            this.mask.setCoords();
-            this.canvas.renderAll();
-            this.imgScaledWidth = this.image.getScaledWidth();
-            this.imgScaledHeight = this.image.getScaledHeight();
-            this.mousewheeling = false;
+            this.mousewheel(opt);
           }
         });   
       } else if (command == "off") {
         this.image.off("mousewheel");
         console.log("mousewheel off");
       }
+    },
+    mousewheel(opt){
+      if (opt && opt.e) {
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+      }
+      if (this.mousewheeling) return;
+        this.mousewheeling = true;
+        var oriWidth, oriHeight;
+        var delta = -(opt && opt.e && opt.e.deltaY) || 100;
+        var width, height, oriLeft, oriTop, clipWidth, clipHeight;
+      if (
+        this.curImgAngle % 90 == 0 &&
+        this.curImgAngle != 180 &&
+        this.curImgAngle != 0 &&
+        this.curImgAngle != 360
+      ) {
+        width = (oriWidth = this.image.getScaledHeight());
+        height = (oriHeight = this.image.getScaledWidth());
+        oriLeft = this.image.get("left");
+        oriTop = this.image.get("top");
+        clipWidth = this.mask.getScaledHeight();
+        clipHeight = this.mask.getScaledWidth();
+      } else {
+        width = (oriWidth = this.image.getScaledWidth());
+        height = (oriHeight = this.image.getScaledHeight());
+        oriLeft = this.image.get("left");
+        oriTop = this.image.get("top");
+        clipWidth = this.mask.getScaledWidth();
+        clipHeight = this.mask.getScaledHeight();
+      }
+      var ratio = width / height;
+      width = width + delta / 1;
+      height = height + delta / 1;
+      if (delta < 0 && (width <= clipWidth || height <= clipHeight)) {
+        if (clipWidth / clipHeight > ratio) {
+          this.image.scaleToWidth(clipWidth);
+        } else {
+          this.image.scaleToHeight(clipHeight);
+        }
+        this.keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight);
+      } else if (delta > 0 &&
+        (width >= this.image.get("width") * this.MAX_SIZE ||
+        height >= this.image.get("height") * this.MAX_SIZE)) {
+      } else {
+        this.image.scaleToWidth(width);
+        this.keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight);
+      }
+      this.image.setCoords();
+      this.mask.setCoords();
+      this.canvas.renderAll();
+      this.imgScaledWidth = this.image.getScaledWidth();
+      this.imgScaledHeight = this.image.getScaledHeight();
+      this.mousewheeling = false;
     },
     keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight) {
       if (!opt || !opt.pointer) return;
@@ -1113,8 +1083,18 @@ export default {
       yRatio = (opt.pointer.y - oriTop) / oriHeight;
       var newTop = this.image.get("top");
       var newLeft = this.image.get("left");
-      var newWidth = this.image.getScaledWidth();
-      var newHeight = this.image.getScaledHeight();
+      if (
+        this.curImgAngle % 90 == 0 &&
+        this.curImgAngle != 180 &&
+        this.curImgAngle != 0 &&
+        this.curImgAngle != 360
+      ){
+        var newWidth = this.image.getScaledHeight();
+        var newHeight = this.image.getScaledWidth();
+      }else{
+        var newWidth = this.image.getScaledWidth();
+        var newHeight = this.image.getScaledHeight();
+      }
       var newx = newWidth * xRatio + newLeft;
       var newy = newHeight * yRatio + newTop;
       this.image.set({
