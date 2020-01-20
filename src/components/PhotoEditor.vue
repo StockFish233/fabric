@@ -5,18 +5,18 @@
         <el-row id="nav">
           <el-row class="nav-box" type="flex" justify="center" style="margin: 0 auto;width: 100%;" v-if="state == ''">
             <div style="width: 450px;float: left">
-            <el-button-group style="margin: 0 auto;">
-              <el-button icon="el-icon-refresh-left" :disabled="returnPrevious" 
-                class="left-button" @click="returnBack('previous')">
+            <el-button-group style="margin: 0 auto;" class="nav-button">
+              <el-button icon="el-icon-refresh-left" @click="returnBack('previous')" :disabled="returnPrevious"
+                :class="{'disable': returnPrevious, 'left-button': !returnPrevious}">
               </el-button>
-              <el-button icon="el-icon-refresh-right" :disabled="returnNext" 
-                class="left-button" @click="returnBack('next')">
+              <el-button icon="el-icon-refresh-right" @click="returnBack('next')" :disabled="returnNext"
+                :class="{'disable': returnNext, 'left-button': !returnNext}">
               </el-button>
             </el-button-group>
             <el-button-group>
               <el-button @click="chooseClip()" class="nav-button">裁剪</el-button>
               <el-button @click="chooseFilters()" class="nav-button">色彩</el-button>
-              <el-button @click="drawer = true" class="nav-button">添加图片</el-button>
+              <el-button @click="addWatermark()" class="nav-button">添加图片</el-button>
             </el-button-group>
             <el-button @click="save()" class="right-button">保存</el-button>
             </div>
@@ -27,11 +27,11 @@
           <el-row class="sub-nav-box" v-if="state == 'clip'">
             <el-row type="flex" justify="center" >
               <el-button-group class="nav-button">
-                <el-button icon="el-icon-refresh-left" :disabled="returnPrevious"
-                  class="subNav-button" @click="returnBack('previous')">
+                <el-button icon="el-icon-refresh-left" :disabled="returnPrevious" @click="returnBack('previous')"
+                  :class="{'disable': returnPrevious, 'subNav-button': !returnPrevious}">
                 </el-button>
-                <el-button icon="el-icon-refresh-right" :disabled="returnNext"
-                  class="subNav-button" @click="returnBack('next')">
+                <el-button icon="el-icon-refresh-right" :disabled="returnNext" @click="returnBack('next')"
+                  :class="{'disable': returnNext, 'subNav-button': !returnNext}">
                 </el-button>
               </el-button-group>&nbsp;&nbsp;
               <el-button @click="cancelClip()" class="subNav-button">取消</el-button>
@@ -176,11 +176,11 @@
             </el-row>
             <el-row type="flex" justify="center" style="margin-bottom:10px;">
               <el-button-group class="nav-button">
-                <el-button icon="el-icon-refresh-left" :disabled="returnPrevious"
-                  class="subNav-button" @click="returnBack('previous')">
+                <el-button icon="el-icon-refresh-left" :disabled="returnPrevious" @click="returnBack('previous')"
+                  :class="{'disable': returnPrevious, 'subNav-button': !returnPrevious}">
                 </el-button>
-                <el-button icon="el-icon-refresh-right" :disabled="returnNext"
-                  class="subNav-button" @click="returnBack('next')">
+                <el-button icon="el-icon-refresh-right" :disabled="returnNext" @click="returnBack('next')"
+                  :class="{'disable': returnNext, 'subNav-button': !returnNext}">
                 </el-button>
               </el-button-group>&nbsp;&nbsp;
               <el-button @click="cancelFilters()" class="subNav-button">取消</el-button>
@@ -199,11 +199,11 @@
           </el-row>
           <el-row class="sub-nav-box" v-if="state == 'watermark'" type="flex" justify="center">
             <el-button-group class="nav-button">
-              <el-button icon="el-icon-refresh-left" :disabled="returnPrevious"
-                class="subNav-button" @click="returnBack('previous')">
+              <el-button icon="el-icon-refresh-left" :disabled="returnPrevious" @click="returnBack('previous')"
+                :class="{'disable': returnPrevious, 'subNav-button': !returnPrevious}">
               </el-button>
-              <el-button icon="el-icon-refresh-right" :disabled="returnNext"
-                class="subNav-button" @click="returnBack('next')">
+              <el-button icon="el-icon-refresh-right" :disabled="returnNext" @click="returnBack('next')"
+                :class="{'disable': returnNext, 'subNav-button': !returnNext}">
               </el-button>
             </el-button-group>&nbsp;&nbsp;
             <el-button @click="goBack()" class="subNav-button">返回</el-button>
@@ -505,8 +505,9 @@ export default {
           width: this.canvas.width,
           height: this.canvas.height,
           fill: "silver",
-          stroke: "silver",
-          strokeDashArray: [5, 5],
+          // fill: "#757575",
+          // stroke: "silver",
+          // strokeDashArray: [5, 5],
           absolutePositioned: true,
           lockMovementX: true,
           lockMovementY: true,
@@ -659,17 +660,17 @@ export default {
         this.image.setCoords();
         this.mask.center();
         this.mask.setCoords();
-        this.addMask();
-        this.mask.setCoords();
-        this.mask.center();
-        this.mask.setCoords();
-        this.canvas.renderAll();
-        // if(this.mask.top < 0) this.mask.set("top", 0);
-        this.saveJson();
-        this.oldIndex = this.curIndex;
-        this.imgScaledWidth = this.image.scaledWidth;
-        this.imgScaledHeight = this.image.scaledHeight;
       })
+      this.addMask();
+      this.mask.setCoords();
+      this.mask.center();
+      this.mask.setCoords();
+      this.canvas.renderAll();
+      // if(this.mask.top < 0) this.mask.set("top", 0);
+      this.saveJson();
+      this.oldIndex = this.curIndex;
+      this.imgScaledWidth = this.image.scaledWidth;
+      this.imgScaledHeight = this.image.scaledHeight;
     },
     addMask() {
       if (this.mask) {
@@ -688,9 +689,6 @@ export default {
           // fill: "#757575",
           // opacity: 0.6,
           objectCaching: false,
-          // scaleX: this.image.scaleX,
-          // scaleY: this.image.scaleY,
-          // selectionBackgroundColor: "rgba(255, 255, 255, 0)",
           padding: 0,
           // angle: this.image.angle,
           lockRotation: true,
@@ -729,6 +727,7 @@ export default {
         } else {
           min = this.image.getScaledWidth();
         }
+        debugger
         if (min > this.canvasHeight) {
           min = this.canvasHeight;
         }
@@ -914,7 +913,6 @@ export default {
           }
         }
       }
-      debugger
       this.mask.setCoords();
       this.mask.center();
       this.mask.setCoords();
@@ -1279,6 +1277,7 @@ export default {
         this.image.scaleToWidth(this.imgScaledWidth);
         this.image.scaleToHeight(this.imgScaledHeight);
       }
+      debugger
       if (
         this.curImgAngle % 90 == 0 &&
         this.curImgAngle != 180 &&
@@ -1300,6 +1299,7 @@ export default {
         // this.mask.set("width", this.image.getScaledHeight());
         // this.mask.set("height", this.image.getScaledWidth());
       } else {
+        
         this.imgHeight = this.image.height;
         this.imgWidth = this.image.width;
         // 重设图片的缩放比例
@@ -1550,13 +1550,17 @@ export default {
       console.log("保存图片");
       this.canvas.renderAll();
     },
+
+    addWatermark() {
+      this.drawer = true;
+      // this.oldIndex = this.curIndex + 1;
+    },
     // 上传图片
     handleRemove(image, imageList) {
       console.log(image, imageList);
     },
     handlePreview(image) {
       console.log(image);
-      // this.drawer = false;
       this.addImage(image.url);
     },
     addImage(url) {
@@ -1639,8 +1643,10 @@ export default {
           // this.canvas.renderAll();  
         },
         mousedown: e => {
-          // this.state = "watermark";
-          // this.opacityValue = watermark.opacity;
+          if(self.state != "clip" && self.state != "filters"){
+            this.state = "watermark";
+            this.opacityValue = watermark.opacity;
+          }
           // this.canvas.setActiveObject(watermark);
           // if (
           //   !(btn.left <= e.pointer.x && e.pointer.x <= btn.left + btn.width &&
@@ -2012,10 +2018,6 @@ export default {
   color: white;
 }
 
-.nav-button:hover{
-  background-color: #3c3e40
-}
-
 .subNav-button {
   background-color: #303133;
   border: none;
@@ -2036,6 +2038,10 @@ export default {
 
 .nav-box /deep/ .el-button:active {
   background-color: #53555c !important;
+}
+
+.nav-button /deep/ .is-disabled:hover {
+  background-color: #909399;
 }
 
 .nav-box /deep/ .el-switch__label{

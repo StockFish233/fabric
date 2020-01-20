@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-      <el-menu id="menu"
+      <!-- <el-menu id="menu"
         :default-active="activeIndex2"
         class="el-menu-demo"
         mode="horizontal"
@@ -9,7 +9,7 @@
         active-text-color="#ffd04b">
         <el-menu-item index="1">首页</el-menu-item>
         <el-menu-item index="2">无关紧要的导航</el-menu-item>
-      </el-menu>
+      </el-menu> -->
     <div v-if="editVisible == false" ><el-button @click="editVisible = true">打开编辑器</el-button></div>
     <!-- <el-row type="flex" justify="center">
     <el-col id="box" style="background-color:beige;margin:0 auto;" > -->
@@ -59,7 +59,10 @@ export default {
   mounted() {
     var menu = document.getElementById("menu");
     this.clientWidth = window.innerWidth;
-    this.clientHeight = window.innerHeight - menu.clientHeight;
+    if(menu)
+      this.clientHeight = window.innerHeight - menu.clientHeight;
+    else
+      this.clientHeight = window.innerHeight;
     console.log(this.clientWidth + "," + this.clientHeight);
     window.addEventListener('resize', this.debounce(this.getSize, 500));
   },
