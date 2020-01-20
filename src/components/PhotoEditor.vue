@@ -21,7 +21,7 @@
             <el-button @click="save()" class="right-button">保存</el-button>
             </div>
             <div style="margin-top: 10px;float：right">
-            <el-switch v-model="adaptToWindow" active-text="适应窗口的变化" ></el-switch>
+              <el-switch v-model="adaptToWindow" active-text="适应窗口的变化" ></el-switch>
             </div>
           </el-row>
           <el-row class="sub-nav-box" v-if="state == 'clip'">
@@ -199,18 +199,18 @@
           </el-row>
           <el-row class="sub-nav-box" v-if="state == 'watermark'" type="flex" justify="center">
             <el-button-group class="nav-button">
-              <el-button icon="el-icon-refresh-left" :disabled="returnPrevious" type="info"
+              <el-button icon="el-icon-refresh-left" :disabled="returnPrevious"
                 class="subNav-button" @click="returnBack('previous')">
               </el-button>
-              <el-button icon="el-icon-refresh-right" :disabled="returnNext" type="info"
+              <el-button icon="el-icon-refresh-right" :disabled="returnNext"
                 class="subNav-button" @click="returnBack('next')">
               </el-button>
             </el-button-group>&nbsp;&nbsp;
-            <el-button @click="state=''" class="subNav-button" type="info">返回</el-button>
+            <el-button @click="goBack()" class="subNav-button">返回</el-button>
             <span class="filterName" style="width:100px;">水印透明度</span>
             <el-slider class="filterSlider" v-model=" opacityValue" :min="0" :max="1" 
               :step="0.001" @input="changeOpacity()" @change="saveJson()"></el-slider>
-            <el-button @click="deleteWatermark()" class="subNav-button" type="info">删除</el-button>
+            <el-button @click="deleteWatermark()" class="subNav-button">删除</el-button>
           </el-row>
         </el-row>
         <div class="canvasDiv" id="canvasDiv" style="margin-top: 20px;">
@@ -513,11 +513,11 @@ export default {
           hasRotatingPoint: false,
           hasControls: true,
           selectable: false
-        })
+        }),
         // lockMovementX: true,
         // lockMovementY: true,
         // lockRotation: true,
-        // hasControls: false, // 编辑框
+        hasControls: false, // 编辑框
         // selectable: false
       });
       this.imgWidth = this.image.width;
@@ -573,7 +573,7 @@ export default {
       this.contrastValue = this.contrast;
       this.brightnessValue = this.brightness;
       this.saveJson();
-      this.scaleImage();
+      this.imageListener();
     },
     init_clip() {
       var self = this;
@@ -586,7 +586,8 @@ export default {
             scaleY: self.newImgScaleY,
             angle: self.imgAngle,
             width: self.newImgWidth,
-            height: self.newImgHeight
+            height: self.newImgHeight,
+            hasControls: false,
           });
           self.canvas.renderAll();
           self.image.clipPath = new fabric.Rect({
@@ -615,7 +616,7 @@ export default {
           self.image.clipPath.setCoords();
           console.log("重载图片");
           self.canvas.renderAll();
-          self.scaleImage();
+          self.imageListener();
           self.jsonList.splice(self.curIndex);
           self.saveJson();
           self.oldIndex = 0;
@@ -645,24 +646,30 @@ export default {
     chooseClip(){
       this.state = "clip";
       this.selectedScale = "原图比例";
+      this.image.set("hasControls", true);
       this.$nextTick(() => {
         var nav = document.getElementById("nav");
         var editor = document.getElementById("editor");
         this.canvasHeight = editor.clientHeight - nav.clientHeight - 40;
         this.canvas.setHeight(this.canvasHeight);
         // this.refreshScale();
+        this.canvas.renderAll();
         this.image.setCoords();
         this.image.center();
         this.image.setCoords();
         this.mask.center();
         this.mask.setCoords();
+        this.addMask();
+        this.mask.setCoords();
+        this.mask.center();
+        this.mask.setCoords();
+        this.canvas.renderAll();
+        // if(this.mask.top < 0) this.mask.set("top", 0);
+        this.saveJson();
+        this.oldIndex = this.curIndex;
+        this.imgScaledWidth = this.image.scaledWidth;
+        this.imgScaledHeight = this.image.scaledHeight;
       })
-      this.addMask();
-      this.canvas.renderAll();
-      this.saveJson();
-      this.oldIndex = this.curIndex;
-      this.imgScaledWidth = this.image.scaledWidth;
-      this.imgScaledHeight = this.image.scaledHeight;
     },
     addMask() {
       if (this.mask) {
@@ -675,7 +682,7 @@ export default {
           originX: "left",
           originY: "top",
           stroke: "#F5A623",
-          strokeWidth: 3,
+          strokeWidth: 2,
           cornerColor: "#F5A623",
           fill: "rgba(255, 255, 255, 0)",
           // fill: "#757575",
@@ -685,7 +692,7 @@ export default {
           // scaleY: this.image.scaleY,
           // selectionBackgroundColor: "rgba(255, 255, 255, 0)",
           padding: 0,
-          angle: this.image.angle,
+          // angle: this.image.angle,
           lockRotation: true,
           hasControls: false,
           lockMovementX: true,
@@ -707,7 +714,8 @@ export default {
         this.mask.toObject = (function(toObject) {
           return function() {
             return fabric.util.object.extend(toObject.call(this), {
-              name: this.name
+              name: this.name,
+              selectedScale: this.selectedScale
             });
           };
         })(this.mask.toObject);
@@ -730,7 +738,7 @@ export default {
           left: this.image.left,
           top: this.image.top,
           stroke: "#F5A623",
-          strokeWidth: 3,
+          strokeWidth: 2,
           lockRotation: true,
           hasControls: false,
           lockMovementX: true,
@@ -740,7 +748,8 @@ export default {
         this.mask.toObject = (function(toObject) {
           return function() {
             return fabric.util.object.extend(toObject.call(this), {
-              name: this.name
+              name: this.name,
+              selectedScale: this.selectedScale
             });
           };
         })(this.mask.toObject);
@@ -759,6 +768,7 @@ export default {
         this.maskScale = 1;
       }
       this.mask.name = "mask";
+      this.mask.selectedScale = this.selectedScale;
       this.canvas.renderAll();
       this.maskWidth = this.mask.getScaledWidth();
       this.maskHeight = this.mask.getScaledHeight();
@@ -904,14 +914,17 @@ export default {
           }
         }
       }
+      debugger
       this.mask.setCoords();
       this.mask.center();
       this.mask.setCoords();
       this.canvas.renderAll();
       this.maskWidth = this.mask.getScaledWidth();
       this.maskHeight = this.mask.getScaledHeight();
-      console.log(this.maskScale);
-      this.saveJson();
+      this.mask.selectedScale = this.selectedScale;
+      this.$nextTick(()=>{
+        this.saveJson();
+      })
     },
     toClip() {
       this.state = "";
@@ -980,6 +993,10 @@ export default {
       }
       this.imgAngle = 0;
       this.imgSrc_clip = img;
+      for (var i = 0; i < this.watermarkGroup.length; i++) {
+        this.canvas.remove(this.watermarkGroup[i].watermark);
+      }
+      this.watermarkGroup.splice(0, this.watermarkGroup.length);
       this.curIndex = this.oldIndex;
       this.image.scaledHeight = this.maskHeight;
       this.image.scaledWidth = this.maskWidth;
@@ -1126,7 +1143,7 @@ export default {
       this.saveJson();
     },
     // 监听图片事件
-    scaleImage() {
+    imageListener() {
       console.log("listening image");
       var self = this;
       this.image.on({
@@ -1144,7 +1161,13 @@ export default {
           console.log(this.imgScaledWidth + "," + this.imgScaledHeight);
           self.saveJson();
         },
-        mousedown: e =>{
+        mousedown: e => {
+          if(self.state != "clip"){
+            self.image.set("hasControls", false);
+          }else{
+            self.image.set("hasControls", true);
+          }
+          self.canvas.renderAll();
           self.imgTop = self.image.top;
           self.imgLeft = self.image.left;
           console.log("curren point ("+ e.pointer.x + "," + e.pointer.y + ")");
@@ -1152,7 +1175,7 @@ export default {
             self.rotating = true;
           }
         },
-        mouseup: e=>{        
+        mouseup: e => {      
           if(self.rotating){
             console.log("rotate  ("+ e.pointer.x + "," + e.pointer.y + ")");
             self.saveJson();
@@ -1291,7 +1314,7 @@ export default {
       this.image.setCoords();
       this.image.center();
       this.canvas.renderAll();
-      // this.saveJson();
+      this.saveJson();
     },
     // 取消角度的变化
     restoreAngle() {
@@ -1559,9 +1582,9 @@ export default {
       watermark.setCoords();
       watermark.center();
       watermark.setCoords();
-      for (var i = 0; i < this.watermarkGroup.length; i++) {
-        this.watermarkGroup[i].btn.set("visible", false);
-      }
+      // for (var i = 0; i < this.watermarkGroup.length; i++) {
+      //   this.watermarkGroup[i].btn.set("visible", false);
+      // }
       // btn = new fabric.Image(delBtn, {
       //   left: watermark.left + watermark.width - 30,
       //   top: watermark.top + 10,
@@ -1601,8 +1624,13 @@ export default {
         this.canvas.renderAll();
       }
     },
+    goBack() {
+      this.state = "";
+      this.opacityValue = 0.5;
+    },
     // 监听水印
     watermarkListener(watermark) {
+      var self = this;
       watermark.on({
         scaling: e => {
           // btn.set("top", watermark.top + 10);
@@ -1611,9 +1639,9 @@ export default {
           // this.canvas.renderAll();  
         },
         mousedown: e => {
-          this.state = "watermark";
-          this.opacityValue = watermark.opacity;
-          this.canvas.setActiveObject(watermark);
+          // this.state = "watermark";
+          // this.opacityValue = watermark.opacity;
+          // this.canvas.setActiveObject(watermark);
           // if (
           //   !(btn.left <= e.pointer.x && e.pointer.x <= btn.left + btn.width &&
           //     btn.top <= e.pointer.y && e.pointer.y <= btn.top + btn.height)
@@ -1684,8 +1712,10 @@ export default {
           // btn.set("visible", false);
         },
         selected: e => {
-          this.state = "watermark";
-          this.opacityValue = watermark.opacity;
+          if(self.state != "clip" && self.state != "filters"){
+            self.state = "watermark";
+            self.opacityValue = watermark.opacity;
+          }
         },
       });
     },
@@ -1744,7 +1774,6 @@ export default {
       this.watermarkGroup.splice(0);
       this.canvas.loadFromJSON(currentObj,this.canvas.renderAll.bind(this.canvas),
         function(o, object) {   
-          // debugger 
           if (object.name) {
             if (object.name == "watermark") {
               var watermark = object;
@@ -1777,15 +1806,19 @@ export default {
               self.watermarkListener(temp.watermark, temp.btn);
               self.clickBtn(temp.watermark, temp.btn);
             } else if (object.name == "mask") {
+              debugger
               self.mask = object;
               self.mask.toObject = (function(toObject) {
                 return function() {
                   return fabric.util.object.extend(toObject.call(this), {
-                    name: this.name
+                    name: this.name,
+                    selectedScale: this.selectedScale
                   });
                 };
               })(self.mask.toObject);
               self.mask.name = 'mask';
+              self.selectedScale = self.mask.selectedScale;
+              self.mask.selectedScale = self.selectedScale;
               self.maskWidth = self.mask.getScaledWidth();
               self.maskHeight = self.mask.getScaledHeight();
               self.mask.set({
@@ -1797,6 +1830,7 @@ export default {
               })
               self.mask.setCoords();
               self.mask.center();
+              // if(self.mask.top < 0) self.mask.top = 0;
               self.mask.setCoords();
               self.moveImageInMask();
               self.scaleMask("on");
@@ -1821,7 +1855,7 @@ export default {
                 width: self.canvasWidth,
                 height: self.canvasHeight
               });
-              self.scaleImage();
+              self.imageListener();
               // self.mousewheelImage("on");
               self.imgScaledWidth = self.image.scaledWidth;
               self.imgScaledHeight = self.image.scaledHeight; 
