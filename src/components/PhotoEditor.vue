@@ -263,9 +263,9 @@ export default {
         }
       ],
       maskShape: "rect", // 裁剪框的形状值,默认为矩形
-      selectedScale: "原图比例",
+      selectedScale: "原始比例",
       scaleList:[
-        "原图比例", "1:1", "3:2", "4:3", "16:9", "2:3", "3:4", "9:16"
+        "原始比例", "1:1", "3:2", "4:3", "16:9", "2:3", "3:4", "9:16"
       ],
 
       // 画布交互的相关变量
@@ -578,6 +578,7 @@ export default {
     },
     init_clip() {
       var self = this;
+      // this.saveJson();
       if (this.imgSrc_clip != "") {
         this.image.setSrc(this.imgSrc_clip, function(img){
           self.image.set({
@@ -646,7 +647,7 @@ export default {
     // 裁剪相关方法
     chooseClip(){
       this.state = "clip";
-      this.selectedScale = "原图比例";
+      this.selectedScale = "原始比例";
       this.image.set("hasControls", true);
       this.$nextTick(() => {
         var nav = document.getElementById("nav");
@@ -660,6 +661,16 @@ export default {
         this.image.setCoords();
         this.mask.center();
         this.mask.setCoords();
+        // this.addMask();
+        // this.mask.setCoords();
+        // this.mask.center();
+        // this.mask.setCoords();
+        // this.canvas.renderAll();
+        // // if(this.mask.top < 0) this.mask.set("top", 0);
+        // this.saveJson();
+        // this.oldIndex = this.curIndex;
+        // this.imgScaledWidth = this.image.scaledWidth;
+        // this.imgScaledHeight = this.image.scaledHeight;
       })
       this.addMask();
       this.mask.setCoords();
@@ -727,7 +738,6 @@ export default {
         } else {
           min = this.image.getScaledWidth();
         }
-        debugger
         if (min > this.canvasHeight) {
           min = this.canvasHeight;
         }
@@ -842,6 +852,7 @@ export default {
       this.jsonList.splice(this.oldIndex);
       this.curIndex = this.oldIndex;
       this.returnBack("previous");
+      this.canvas.renderAll();
       this.curIndex = this.oldIndex - 1; 
       this.canvas.remove(this.mask);  
       this.oldIndex = 0;
@@ -851,7 +862,7 @@ export default {
         this.canvasHeight = editor.clientHeight - nav.clientHeight - 40;
         this.canvas.setHeight(this.canvasHeight);
         this.refreshScale();
-        this.canvas.renderAll();
+        // this.canvas.renderAll();
       })
     },
     // 选择裁剪框尺寸
@@ -870,7 +881,7 @@ export default {
         this.mask.set("width", min / this.mask.scaleX);
         this.maskScale = 1;
       } else{
-        if( command == "原图比例"){
+        if( command == "原始比例"){
           this.maskScale = this.imgScale;
         }else if (command == "3:2") {
           this.maskScale = 3/2;
@@ -999,6 +1010,7 @@ export default {
       this.image.scaledHeight = this.maskHeight;
       this.image.scaledWidth = this.maskWidth;
       this.canvas.renderAll();
+      
     },
     // 监听裁剪框的缩放
     scaleMask(command) {
@@ -1042,22 +1054,25 @@ export default {
         opt.e.stopPropagation();
       }
       if (this.mousewheeling) return;
-        this.mousewheeling = true;
-        var oriWidth, oriHeight;
-        var delta = -(opt && opt.e && opt.e.deltaY) || 100;
-        var width, height, oriLeft, oriTop, clipWidth, clipHeight;
-      if (
-        this.curImgAngle % 90 == 0 &&
-        this.curImgAngle != 180 &&
-        this.curImgAngle != 0 &&
-        this.curImgAngle != 360
-      ) {
+      this.mousewheeling = true;
+      var oriWidth, oriHeight;
+      var delta = -(opt && opt.e && opt.e.deltaY) || 100;
+      var width, height, oriLeft, oriTop, clipWidth, clipHeight;
+      debugger
+      if (this.curImgAngle % 90 == 0 && this.curImgAngle != 180 && this.curImgAngle != 0 && this.curImgAngle != 360) {
         width = (oriWidth = this.image.getScaledHeight());
         height = (oriHeight = this.image.getScaledWidth());
         oriLeft = this.image.get("left");
         oriTop = this.image.get("top");
         clipWidth = this.mask.getScaledHeight();
         clipHeight = this.mask.getScaledWidth();
+      } else if (this.curImgAngle == 180 || this.curImgAngle == 0 || this.curImgAngle == 360) {
+        width = (oriWidth = this.image.getScaledWidth());
+        height = (oriHeight = this.image.getScaledHeight());
+        oriLeft = this.image.get("left");
+        oriTop = this.image.get("top");
+        clipWidth = this.mask.getScaledWidth();
+        clipHeight = this.mask.getScaledHeight();
       } else {
         width = (oriWidth = this.image.getScaledWidth());
         height = (oriHeight = this.image.getScaledHeight());
@@ -1086,8 +1101,8 @@ export default {
       this.image.setCoords();
       this.mask.setCoords();
       this.canvas.renderAll();
-      this.imgScaledWidth = this.image.getScaledWidth();
-      this.imgScaledHeight = this.image.getScaledHeight();
+      this.imgScaledWidth = Math.round(this.image.getScaledWidth());
+      this.imgScaledHeight = Math.round(this.image.getScaledHeight());
       this.mousewheeling = false;
     },
     keepPoint(opt, oriLeft, oriTop, oriWidth, oriHeight) {
@@ -1119,10 +1134,13 @@ export default {
       this.image.setCoords();
     }, 
     changeImgScaledWidth(){
-      this.image.set('scaleX', this.imgScaledWidth / this.image.width);
+      if(this.imgScaledWidth > this.image.width * this.MAX_SIZE){
+        this.imgScaledWidth = Math.round(this.image.width * this.MAX_SIZE);
+      }
       this.image.scaledWidth = this.imgScaledWidth;
+      this.image.set('scaleX', this.imgScaledWidth / this.image.width);
       if (this.lockImageScale && !this.mousewheeling) {
-        this.imgScaledHeight = this.imgScaledWidth / this.imgScale;
+        this.imgScaledHeight = Math.round(this.imgScaledWidth / this.imgScale);
         this.image.scaledHeight = this.imgScaledHeight;
         this.image.set('scaleY', this.imgScaledHeight / this.image.height);
       }
@@ -1130,10 +1148,13 @@ export default {
       this.saveJson();
     },
     changeImgScaledHeight(){
+      if(this.imgScaledHeight > this.image.height * this.MAX_SIZE){
+        this.imgScaledHeight = Math.round(this.image.height * this.MAX_SIZE);
+      }
       this.image.scaledHeight = this.imgScaledHeight;
       this.image.set('scaleY', this.imgScaledHeight / this.image.height);
       if (this.lockImageScale && !this.mousewheeling) {
-        this.imgScaledWidth = this.imgScaledHeight * this.imgScale;
+        this.imgScaledWidth = Math.round(this.imgScaledHeight * this.imgScale);
         this.image.scaledWidth = this.imgScaledWidth;
         this.image.set('scaleX', this.imgScaledWidth / this.image.width);
       }
@@ -1188,6 +1209,10 @@ export default {
             }
           }
           self.scaling = false;
+        },
+        rotated: e => {
+          self.curImgAngle = this.image.angle;
+          self.saveJson();
         }
       }); 
          
@@ -1277,7 +1302,6 @@ export default {
         this.image.scaleToWidth(this.imgScaledWidth);
         this.image.scaleToHeight(this.imgScaledHeight);
       }
-      debugger
       if (
         this.curImgAngle % 90 == 0 &&
         this.curImgAngle != 180 &&
@@ -1423,7 +1447,6 @@ export default {
         this.canvasHeight = editor.clientHeight - nav.clientHeight - 40;
         this.canvas.setHeight(this.canvasHeight);
         this.refreshScale();
-        this.canvas.renderAll();
       })
     },
     saveFilters(){
@@ -1812,7 +1835,7 @@ export default {
               self.watermarkListener(temp.watermark, temp.btn);
               self.clickBtn(temp.watermark, temp.btn);
             } else if (object.name == "mask") {
-              debugger
+              // debugger
               self.mask = object;
               self.mask.toObject = (function(toObject) {
                 return function() {
@@ -1906,36 +1929,34 @@ export default {
           self.canvas.setWidth(self.canvasWidth);
           self.canvas.setHeight(self.canvasHeight);
           // self.refreshScale();
-          var that = self;
-          self.image.setSrc(that.image.getSrc(), function(){ 
-            that.image.clipPath.set({
-              top: 0,
-              left: 0,
-              width: that.canvasWidth,
-              height: that.canvasHeight
-            });
-            that.image.name = "image";
-            that.refreshScale();
-            that.image.setCoords();
-            that.image.center();
-            that.image.setCoords(); 
-            if(that.state == "clip"){
-              that.mask.name = "mask";
-              that.mask.set('width', that.image.getScaledWidth());
-              that.mask.set('height', that.image.getScaledHeight());
-              that.mask.setCoords();
-              that.mask.center();
-              that.mask.setCoords();
+          self.image.setSrc(self.image.getSrc(), function(){ 
+            self.image.clipPath.set("top", 0);
+            self.image.clipPath.set("left", 0);
+            self.image.clipPath.set("width", self.canvasWidth);
+            self.image.clipPath.set("height", self.canvasHeight);
+            self.image.name = "image";
+            self.refreshScale();
+            self.image.setCoords();
+            self.image.center();
+            self.image.setCoords(); 
+            if(self.state == "clip"){
+              self.mask.name = "mask";
+              self.mask.set('width', self.image.getScaledWidth());
+              self.mask.set('height', self.image.getScaledHeight());
+              self.mask.setCoords();
+              self.mask.center();
+              self.mask.setCoords();
             }
-            that.canvas.renderAll();
-            console.log(that.image.clipPath.width + " , " + that.image.clipPath.height)
-            console.log("图片的宽高：" + that.image.getScaledWidth() + " , " + that.image.getScaledHeight())
+            self.canvas.renderAll();
+            self.image.clipPath.setCoords();
+            self.image.clipPath.center();
+            self.image.clipPath.setCoords(); 
+            self.canvas.renderAll();
+            self.jsonList[self.curIndex] = self.canvas.toJSON();
+            console.log("画布: " + self.canvas.width + " , " + self.canvas.height)
+            console.log("clipPath: " + self.image.clipPath.width + " , " + self.image.clipPath.height)
+            console.log("图片的宽高：" + self.image.getScaledWidth() + " , " + self.image.getScaledHeight())
           });
-          self.image.setCoords();
-          self.image.center();
-          self.image.setCoords(); 
-          self.canvas.renderAll();
-          self.jsonList[self.curIndex] = self.canvas.toJSON();
         })
       }
     },

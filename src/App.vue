@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-      <!-- <el-menu id="menu"
+      <el-menu id="menu" style="width:100%"
         :default-active="activeIndex2"
         class="el-menu-demo"
         mode="horizontal"
@@ -9,7 +9,7 @@
         active-text-color="#ffd04b">
         <el-menu-item index="1">首页</el-menu-item>
         <el-menu-item index="2">无关紧要的导航</el-menu-item>
-      </el-menu> -->
+      </el-menu>
     <div v-if="editVisible == false" ><el-button @click="editVisible = true">打开编辑器</el-button></div>
     <!-- <el-row type="flex" justify="center">
     <el-col id="box" style="background-color:beige;margin:0 auto;" > -->
@@ -32,7 +32,7 @@ export default {
     return {
       activeIndex2: '1',
       editVisible: false,
-      imgSrc: "../static/douyi.jpg",
+      imgSrc: "../static/aa.jpg",
       clientWidth: 1920,
       clientHeight: 900,
     }
@@ -44,8 +44,11 @@ export default {
       this.$nextTick(() => {
         var menu = document.getElementById("menu");
         self.clientWidth = window.innerWidth;
-        self.clientHeight = window.innerHeight - menu.clientHeight; 
-        console.log(self.clientWidth + "," + self.clientHeight);
+        if(menu)
+          this.clientHeight = window.innerHeight - menu.clientHeight;
+        else
+          this.clientHeight = window.innerHeight;
+        console.log("改变后的组件大小" + self.clientWidth + "," + self.clientHeight);
       })
     },
     debounce(fn, wait){
@@ -63,7 +66,7 @@ export default {
       this.clientHeight = window.innerHeight - menu.clientHeight;
     else
       this.clientHeight = window.innerHeight;
-    console.log(this.clientWidth + "," + this.clientHeight);
+    console.log("初始组件大小" + this.clientWidth + "," + this.clientHeight);
     window.addEventListener('resize', this.debounce(this.getSize, 500));
   },
   beforeDestroy() {
