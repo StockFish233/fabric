@@ -4,6 +4,7 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import fabric from 'fabric'
+import 'babel-polyfill'
 import 'element-ui/lib/theme-chalk/display.css';
 import {
   Row,

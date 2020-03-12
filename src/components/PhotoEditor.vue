@@ -1804,6 +1804,7 @@ export default {
       this.canvas.loadFromJSON(currentObj,this.canvas.renderAll.bind(this.canvas),
         function(o, object) {   
           if (object.name) {
+            debugger
             if (object.name == "watermark") {
               var watermark = object;
               watermark.toObject = (function(toObject) {
