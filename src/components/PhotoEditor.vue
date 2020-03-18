@@ -4,7 +4,7 @@
       <el-col :md="24">
         <el-row id="nav">
           <el-row class="nav-box" type="flex" justify="center" style="margin: 0 auto;width: 100%;" v-if="state == ''">
-            <div style="width: 450px;float: left">
+            <div style="width: 500px;float: left">
             <el-button-group style="margin: 0 auto;" class="nav-button">
               <el-button icon="el-icon-refresh-left" @click="returnBack('previous')" :disabled="returnPrevious"
                 :class="{'disable': returnPrevious, 'left-button': !returnPrevious}">
@@ -18,6 +18,7 @@
               <el-button @click="chooseFilters()" class="nav-button">色彩</el-button>
               <el-button @click="addWatermark()" class="nav-button">添加图片</el-button>
             </el-button-group>
+            <el-button class="right-button" @click="paste()">复制</el-button>
             <el-button @click="save()" class="right-button">保存</el-button>
             </div>
             <div style="margin-top: 10px;float：right">
@@ -315,7 +316,8 @@ export default {
       newImgHeight: 0,
       newImgScaleX: 0,
       newImgScaleY: 0,
-
+      _clipboard: null,
+      
       brightness: 0, // 图片亮度
       brightnessValue: 0, // 图片亮度修改后的值
       contrast: 0,
@@ -487,16 +489,73 @@ export default {
     },
   },
   methods: {
+    paste() {
+      var self = this;
+      this.image.clone(function(clonedObj) {
+        self.canvas.discardActiveObject();
+        clonedObj.clipPath = new fabric.Circle({
+            left: clonedObj.left,
+            top: clonedObj.top,
+            fill: "silver",
+            radius: 100,
+            absolutePositioned: true,
+            lockMovementX: true,
+            lockMovementY: true,
+            hasRotatingPoint: false,
+            hasControls: true,
+            selectable: false
+        });
+        clonedObj.clipPath.setCoords();
+        clonedObj.set({
+          evented: true,
+        });
+        if (clonedObj.type === 'activeSelection') { // 选择多个对象
+          clonedObj.canvas = canvas;
+          clonedObj.forEachObject(function(obj) {
+            canvas.add(obj);
+          });
+          clonedObj.setCoords();
+        } else {
+          self.canvas.add(clonedObj);
+        }
+        var filter = new fabric.Image.filters.Blur({
+          blur: 0.1
+        });
+        clonedObj.filters.push(filter);
+        clonedObj.applyFilters();
+        var group = new fabric.Group([self.image, clonedObj],{
+          left: self.image.left,
+          top: self.image.top,
+          originX: "center",
+          originY: "center",
+          width: clonedObj.width,
+          height: clonedObj.height
+        });
+        debugger
+        var img = self.canvas.toDataURL({
+          format: "png",
+          left: self.image.aCoords.tl.x,
+          top: self.image.aCoords.tl.y,
+          width: group.width,
+          height: group.height
+        })
+        console.log(img)
+        self.canvas.requestRenderAll();
+      });
+    },
+
     init() {
       var img = document.getElementById("img");
       var self = this;
       this.canvas = this.__canvas = new fabric.Canvas("canvas");
       this.image = new fabric.Image(img, {
-        left: 0,
-        top: 0,
+        left: self.canvasWidth/2,
+        top: self.canvasHeight/2,
         width: img.width,
         height: img.height,
         angle: this.imgAngle,
+        originX: "center",
+        originY: "center",
         clipPath: new fabric.Rect({
           top: 0,
           left: 0,
@@ -964,7 +1023,7 @@ export default {
           left: this.newImgLeft,
           top: this.newImgTop,
           width: this.newImgWidth,
-          height: this.newImgHeight
+          height: this.newImgHeight,
         });
       } else if (this.maskShape == "circle") {
         this.image.clipPath = new fabric.Circle({
@@ -1543,27 +1602,27 @@ export default {
       for (var i = 0; i < this.watermarkGroup.length; i++) {
         this.watermarkGroup[i].btn.set("visible", false);
       }
+      this.newImgLeft = this.image.left;
+      this.newImgTop = this.image.top;
+      this.newImgWidth = this.image.width;
+      this.newImgHeight = this.image.height;
+      this.newImgScaleX = this.image.scaleX;
+      this.newImgScaleY = this.image.scaleY;
+      debugger
       var newImg = this.canvas.toDataURL({
         format: "png",
         multiplier: this.image.width / this.image.getScaledWidth(),
-        top: this.image.top,
-        left: this.image.left,
-        width: this.image.getScaledWidth(),
-        height: this.image.getScaledHeight()
+        left: this.newImgLeft,
+        top: this.newImgTop,
+        width: this.newImgWidth,
+        height: this.newImgHeight
       });
       this.imgSrc_clip = newImg;
       for (var i = 0; i < this.watermarkGroup.length; i++) {
         this.canvas.remove(this.watermarkGroup[i].watermark);
       }
       this.watermarkGroup.splice(0, this.watermarkGroup.length);
-      this.newImgLeft = this.image.left;
-      this.newImgTop = this.image.top;
-      // if (this.newImgTop < 0) this.newImgTop = 0;
-      // if (this.newImgLeft < 0) this.newImgLeft = 0;
-      this.newImgWidth = this.image.width;
-      this.newImgHeight = this.image.height;
-      this.newImgScaleX = this.image.scaleX;
-      this.newImgScaleY = this.image.scaleY;
+      
       this.brightness = this.contrast = this.saturation = this.blendAlpha = this.blur = 0;
       this.brightnessValue = this.contrastValue = this.saturationValue = this.blendAlphaValue = this.blurValue = 0;
       this.gammaRed = this.gammaGreen = this.gammaBlue = this.sharpen = 1;
@@ -1571,6 +1630,7 @@ export default {
       this.jsonList.length = 0;
       this.curIndex = -1;
       console.log("保存图片");
+      console.log(newImg)
       this.canvas.renderAll();
     },
 
